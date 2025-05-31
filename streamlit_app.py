@@ -7,137 +7,93 @@ from datetime import datetime
 # MUST BE FIRST - Set page config before any other Streamlit commands
 st.set_page_config(page_title="💰 Personal Finance Tracker", layout="centered")
 
-# Mobile-optimized CSS
+# Simple mobile-optimized CSS
 st.markdown("""
 <style>
-    /* Mobile-first responsive design */
+    /* Force mobile-friendly container */
+    .main .block-container {
+        padding-top: 1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        max-width: 100%;
+    }
+    
+    /* Ensure columns stack properly on mobile */
     @media (max-width: 768px) {
         .main .block-container {
-            padding-top: 1rem;
             padding-left: 0.5rem;
             padding-right: 0.5rem;
-            max-width: 100%;
-        }
-    }
-    
-    /* Target metric containers - Updated selectors for newer Streamlit */
-    [data-testid="metric-container"] {
-        background-color: #f8f9fa !important;
-        border: 2px solid #dee2e6 !important;
-        padding: 1rem !important;
-        border-radius: 0.75rem !important;
-        margin: 0.5rem 0 !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
-        transition: all 0.3s ease !important;
-    }
-    
-    [data-testid="metric-container"]:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 6px 12px rgba(0,0,0,0.15) !important;
-    }
-    
-    /* Metric label styling */
-    [data-testid="metric-container"] [data-testid="metric-label"] {
-        font-size: 0.9rem !important;
-        font-weight: 600 !important;
-        color: #495057 !important;
-    }
-    
-    /* Metric value styling */
-    [data-testid="metric-container"] [data-testid="metric-value"] {
-        font-size: 1.25rem !important;
-        font-weight: 700 !important;
-        color: #212529 !important;
-    }
-    
-    /* Income card - Green */
-    .income-card [data-testid="metric-container"] {
-        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%) !important;
-        border-color: #28a745 !important;
-    }
-    
-    .income-card [data-testid="metric-value"] {
-        color: #155724 !important;
-    }
-    
-    /* Expense card - Red */
-    .expense-card [data-testid="metric-container"] {
-        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%) !important;
-        border-color: #dc3545 !important;
-    }
-    
-    .expense-card [data-testid="metric-value"] {
-        color: #721c24 !important;
-    }
-    
-    /* Investment card - Blue */
-    .investment-card [data-testid="metric-container"] {
-        background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%) !important;
-        border-color: #17a2b8 !important;
-    }
-    
-    .investment-card [data-testid="metric-value"] {
-        color: #0c5460 !important;
-    }
-    
-    /* Balance card - Yellow/Orange */
-    .balance-card [data-testid="metric-container"] {
-        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%) !important;
-        border-color: #ffc107 !important;
-    }
-    
-    .balance-card [data-testid="metric-value"] {
-        color: #856404 !important;
-    }
-    
-    /* Negative balance - Red theme */
-    .balance-negative [data-testid="metric-container"] {
-        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%) !important;
-        border-color: #dc3545 !important;
-    }
-    
-    .balance-negative [data-testid="metric-value"] {
-        color: #721c24 !important;
-    }
-    
-    /* Headers */
-    h1 {
-        font-size: 1.75rem !important;
-        margin-bottom: 1rem !important;
-    }
-    
-    h2 {
-        font-size: 1.25rem !important;
-        margin-bottom: 0.75rem !important;
-    }
-    
-    h3 {
-        font-size: 1.1rem !important;
-        margin-bottom: 0.5rem !important;
-    }
-    
-    /* Form elements */
-    .stSelectbox label, .stDateInput label, .stTextInput label, .stNumberInput label {
-        font-size: 0.9rem !important;
-        font-weight: 600 !important;
-    }
-    
-    .stButton button {
-        font-size: 1rem !important;
-        padding: 0.5rem 1rem !important;
-        border-radius: 0.5rem !important;
-        font-weight: 600 !important;
-    }
-    
-    /* Column spacing for mobile */
-    @media (max-width: 768px) {
-        .row-widget.stHorizontal {
-            gap: 0.5rem !important;
         }
         
-        [data-testid="column"] {
+        /* Force 2x2 grid on mobile */
+        div[data-testid="column"] {
+            width: 50% !important;
+            flex: 0 0 50% !important;
+            max-width: 50% !important;
             padding: 0.25rem !important;
         }
+        
+        .row-widget.stHorizontal {
+            gap: 0 !important;
+        }
+    }
+    
+    /* Style metric containers */
+    div[data-testid="metric-container"] {
+        background-color: #ffffff;
+        border: 1px solid #e0e0e0;
+        padding: 0.75rem;
+        border-radius: 8px;
+        margin: 0.25rem 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        min-height: 80px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    
+    /* Metric label */
+    div[data-testid="metric-container"] div[data-testid="metric-label"] {
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    /* Metric value */
+    div[data-testid="metric-container"] div[data-testid="metric-value"] {
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+    
+    /* Color coding for different metrics */
+    div[data-testid="metric-container"]:has(div[data-testid="metric-label"]:contains("Income")) {
+        background: linear-gradient(135deg, #d4edda, #c3e6cb);
+        border-color: #28a745;
+    }
+    
+    div[data-testid="metric-container"]:has(div[data-testid="metric-label"]:contains("Expense")) {
+        background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+        border-color: #dc3545;
+    }
+    
+    div[data-testid="metric-container"]:has(div[data-testid="metric-label"]:contains("Investment")) {
+        background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+        border-color: #17a2b8;
+    }
+    
+    div[data-testid="metric-container"]:has(div[data-testid="metric-label"]:contains("Balance")) {
+        background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+        border-color: #ffc107;
+    }
+    
+    /* Reduce header sizes */
+    h1 { font-size: 1.5rem; }
+    h2 { font-size: 1.25rem; }
+    h3 { font-size: 1.1rem; }
+    
+    /* Form styling */
+    .stSelectbox label, .stDateInput label, .stTextInput label, .stNumberInput label {
+        font-size: 0.9rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -253,71 +209,47 @@ if not df.empty:
     # Display selected month/year in the cards section
     st.subheader(f"📅 {selected_month_name} {selected_year}")
     
-    # Display summary cards in 2x2 grid with proper CSS classes
+    # Display summary cards in 2x2 grid - simplified without wrapper divs
     row1_col1, row1_col2 = st.columns(2)
     row2_col1, row2_col2 = st.columns(2)
     
     with row1_col1:
-        st.markdown('<div class="income-card">', unsafe_allow_html=True)
         st.metric(
             label="💰 Income",
-            value=f"₹{total_income:,.0f}",
-            delta=None
+            value=f"₹{total_income:,.0f}"
         )
-        st.markdown('</div>', unsafe_allow_html=True)
     
     with row1_col2:
-        st.markdown('<div class="expense-card">', unsafe_allow_html=True)
         st.metric(
             label="💸 Expense",
-            value=f"₹{total_expense:,.0f}",
-            delta=None
+            value=f"₹{total_expense:,.0f}"
         )
-        st.markdown('</div>', unsafe_allow_html=True)
     
     with row2_col1:
-        st.markdown('<div class="investment-card">', unsafe_allow_html=True)
         st.metric(
             label="📈 Investment",
-            value=f"₹{total_investment:,.0f}",
-            delta=None
+            value=f"₹{total_investment:,.0f}"
         )
-        st.markdown('</div>', unsafe_allow_html=True)
     
     with row2_col2:
-        balance_class = "balance-card" if net_savings >= 0 else "balance-negative"
-        st.markdown(f'<div class="{balance_class}">', unsafe_allow_html=True)
         st.metric(
             label="💵 Balance",
-            value=f"₹{net_savings:,.0f}",
-            delta=None
+            value=f"₹{net_savings:,.0f}"
         )
-        st.markdown('</div>', unsafe_allow_html=True)
         
 else:
-    # Show empty cards if no data in 2x2 grid with colors
+    # Show empty cards if no data in 2x2 grid
     row1_col1, row1_col2 = st.columns(2)
     row2_col1, row2_col2 = st.columns(2)
     
     with row1_col1:
-        st.markdown('<div class="income-card">', unsafe_allow_html=True)
         st.metric(label="💰 Income", value="₹0")
-        st.markdown('</div>', unsafe_allow_html=True)
-        
     with row1_col2:
-        st.markdown('<div class="expense-card">', unsafe_allow_html=True)
-        st.metric(label="💸 Expense", value="₹0")
-        st.markdown('</div>', unsafe_allow_html=True)
-        
+        st.metric(label="💸 Expense", value="₹0") 
     with row2_col1:
-        st.markdown('<div class="investment-card">', unsafe_allow_html=True)
         st.metric(label="📈 Investment", value="₹0")
-        st.markdown('</div>', unsafe_allow_html=True)
-        
     with row2_col2:
-        st.markdown('<div class="balance-card">', unsafe_allow_html=True)
         st.metric(label="💵 Balance", value="₹0")
-        st.markdown('</div>', unsafe_allow_html=True)
 
 # Add spacing
 st.markdown("---")
