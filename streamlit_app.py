@@ -129,6 +129,39 @@ st.markdown("""
         font-size: 0.9rem;
     }
     
+    /* Force side-by-side layout for form elements */
+    .form-row {
+        display: flex !important;
+        gap: 0.5rem !important;
+        width: 100% !important;
+    }
+    
+    .form-row > div {
+        flex: 1 !important;
+        min-width: 0 !important;
+    }
+    
+    /* Force year/month selectors to stay side by side on mobile */
+    .year-month-row .stHorizontal {
+        display: flex !important;
+        gap: 0.5rem !important;
+        flex-wrap: nowrap !important;
+    }
+    
+    .year-month-row div[data-testid="column"] {
+        width: 50% !important;
+        flex: 1 !important;
+        min-width: 0 !important;
+        display: block !important;
+    }
+    
+    /* Mobile specific for selectors */
+    @media (max-width: 768px) {
+        .year-month-row .stSelectbox {
+            margin-bottom: 0.5rem;
+        }
+    }
+    
     /* Hide any potential Streamlit column containers in grid section */
     .grid-section .stHorizontal,
     .grid-section div[data-testid="column"] {
@@ -222,7 +255,8 @@ df = pd.DataFrame(data)
 if not df.empty:
     df["Date"] = pd.to_datetime(df["Date"])
     
-    # Month and Year selection
+    # Month and Year selection - wrap in container to force side-by-side
+    st.markdown('<div class="year-month-row">', unsafe_allow_html=True)
     col1, col2 = st.columns(2)
     
     with col1:
@@ -245,6 +279,8 @@ if not df.empty:
         
         selected_month_name = st.selectbox("Select Month", month_names, index=default_month_index)
         selected_month = datetime.strptime(selected_month_name, '%B').month
+    
+    st.markdown('</div>', unsafe_allow_html=True)  # Close year-month-row div
     
     # Filter for selected month and year
     selected_month_df = df[(df["Date"].dt.month == selected_month) & (df["Date"].dt.year == selected_year)]
@@ -318,6 +354,33 @@ observer.observe(document.body, { childList: true, subtree: true });
 
 // Also run on resize
 window.addEventListener('resize', enforceCustomGrid);
+
+// Additional function to enforce year-month row layout
+function enforceYearMonthLayout() {
+    const yearMonthRow = document.querySelector('.year-month-row');
+    if (yearMonthRow) {
+        const horizontalContainer = yearMonthRow.querySelector('.stHorizontal');
+        if (horizontalContainer) {
+            horizontalContainer.style.display = 'flex';
+            horizontalContainer.style.gap = '0.5rem';
+            horizontalContainer.style.flexWrap = 'nowrap';
+        }
+        
+        const columns = yearMonthRow.querySelectorAll('[data-testid="column"]');
+        columns.forEach(col => {
+            col.style.width = '50%';
+            col.style.flex = '1';
+            col.style.minWidth = '0';
+            col.style.display = 'block';
+        });
+    }
+}
+
+// Run both functions
+setInterval(() => {
+    enforceCustomGrid();
+    enforceYearMonthLayout();
+}, 100);
 </script>
 """, unsafe_allow_html=True)
 
