@@ -4,6 +4,9 @@ import pandas as pd
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 
+# MUST BE FIRST - Set page config before any other Streamlit commands
+st.set_page_config(page_title="💰 Personal Finance Tracker", layout="centered")
+
 # Mobile-optimized CSS
 st.markdown("""
 <style>
@@ -142,8 +145,6 @@ SUBCATEGORIES = {
 client = get_gsheet_connection()
 sheet = client.open("MyFinanceTracker")  # CHANGE to your Sheet name
 ws = sheet.worksheet("Tracker")          # Single tab name
-
-st.set_page_config(page_title="💰 Personal Finance Tracker", layout="centered")
 
 st.title("💸 Daily Expense & Investment Tracker")
 
