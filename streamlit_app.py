@@ -48,7 +48,7 @@ st.markdown("""
     
     /* Alternative selector for metric values */
     div[data-testid="metric-container"] div[data-testid="metric-value"] > div {
-        font-size: 0.75rem !important;
+        font-size: 0.45rem !important;
     }
     
     /* Delta styling */
