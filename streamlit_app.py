@@ -10,76 +10,134 @@ st.set_page_config(page_title="💰 Personal Finance Tracker", layout="centered"
 # Mobile-optimized CSS
 st.markdown("""
 <style>
-    /* Reduce overall font sizes */
-    .main .block-container {
-        padding-top: 1rem;
-        padding-left: 1rem;
-        padding-right: 1rem;
+    /* Mobile-first responsive design */
+    @media (max-width: 768px) {
+        .main .block-container {
+            padding-top: 1rem;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+            max-width: 100%;
+        }
     }
     
-    /* Make metric containers smaller */
-    div[data-testid="metric-container"] {
-        background-color: #f8f9fa;
-        border: 1px solid #dee2e6;
-        padding: 0.4rem;
-        border-radius: 0.5rem;
-        margin: 0.2rem 0;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    /* Target metric containers - Updated selectors for newer Streamlit */
+    [data-testid="metric-container"] {
+        background-color: #f8f9fa !important;
+        border: 2px solid #dee2e6 !important;
+        padding: 1rem !important;
+        border-radius: 0.75rem !important;
+        margin: 0.5rem 0 !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        transition: all 0.3s ease !important;
     }
     
-    /* Reduce metric label font size */
-    div[data-testid="metric-container"] div[data-testid="metric-label"] {
-        font-size: 0.7rem !important;
-        font-weight: 600;
+    [data-testid="metric-container"]:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15) !important;
     }
     
-    /* Reduce metric value font size */
-    div[data-testid="metric-container"] div[data-testid="metric-value"] {
-        font-size: 0.85rem !important;
-        font-weight: 700;
+    /* Metric label styling */
+    [data-testid="metric-container"] [data-testid="metric-label"] {
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        color: #495057 !important;
     }
     
-    /* Color coding */
-    div[data-testid="metric-container"]:nth-child(1) {
-        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-        border-color: #28a745;
+    /* Metric value styling */
+    [data-testid="metric-container"] [data-testid="metric-value"] {
+        font-size: 1.25rem !important;
+        font-weight: 700 !important;
+        color: #212529 !important;
     }
     
-    div[data-testid="metric-container"]:nth-child(2) {
-        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-        border-color: #dc3545;
+    /* Income card - Green */
+    .income-card [data-testid="metric-container"] {
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%) !important;
+        border-color: #28a745 !important;
     }
     
-    div[data-testid="metric-container"]:nth-child(3) {
-        background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
-        border-color: #17a2b8;
+    .income-card [data-testid="metric-value"] {
+        color: #155724 !important;
     }
     
-    div[data-testid="metric-container"]:nth-child(4) {
-        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-        border-color: #ffc107;
+    /* Expense card - Red */
+    .expense-card [data-testid="metric-container"] {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%) !important;
+        border-color: #dc3545 !important;
     }
     
-    /* Reduce header sizes */
+    .expense-card [data-testid="metric-value"] {
+        color: #721c24 !important;
+    }
+    
+    /* Investment card - Blue */
+    .investment-card [data-testid="metric-container"] {
+        background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%) !important;
+        border-color: #17a2b8 !important;
+    }
+    
+    .investment-card [data-testid="metric-value"] {
+        color: #0c5460 !important;
+    }
+    
+    /* Balance card - Yellow/Orange */
+    .balance-card [data-testid="metric-container"] {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%) !important;
+        border-color: #ffc107 !important;
+    }
+    
+    .balance-card [data-testid="metric-value"] {
+        color: #856404 !important;
+    }
+    
+    /* Negative balance - Red theme */
+    .balance-negative [data-testid="metric-container"] {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%) !important;
+        border-color: #dc3545 !important;
+    }
+    
+    .balance-negative [data-testid="metric-value"] {
+        color: #721c24 !important;
+    }
+    
+    /* Headers */
     h1 {
-        font-size: 1.4rem !important;
+        font-size: 1.75rem !important;
+        margin-bottom: 1rem !important;
     }
     
     h2 {
-        font-size: 1.2rem !important;
+        font-size: 1.25rem !important;
+        margin-bottom: 0.75rem !important;
     }
     
     h3 {
-        font-size: 1rem !important;
+        font-size: 1.1rem !important;
+        margin-bottom: 0.5rem !important;
     }
     
     /* Form elements */
     .stSelectbox label, .stDateInput label, .stTextInput label, .stNumberInput label {
-        font-size: 0.8rem !important;
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
     }
     
     .stButton button {
-        font-size: 0.9rem !important;
+        font-size: 1rem !important;
+        padding: 0.5rem 1rem !important;
+        border-radius: 0.5rem !important;
+        font-weight: 600 !important;
+    }
+    
+    /* Column spacing for mobile */
+    @media (max-width: 768px) {
+        .row-widget.stHorizontal {
+            gap: 0.5rem !important;
+        }
+        
+        [data-testid="column"] {
+            padding: 0.25rem !important;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -195,51 +253,71 @@ if not df.empty:
     # Display selected month/year in the cards section
     st.subheader(f"📅 {selected_month_name} {selected_year}")
     
-    # Display summary cards in 2x2 grid for mobile
+    # Display summary cards in 2x2 grid with proper CSS classes
     row1_col1, row1_col2 = st.columns(2)
     row2_col1, row2_col2 = st.columns(2)
     
     with row1_col1:
+        st.markdown('<div class="income-card">', unsafe_allow_html=True)
         st.metric(
             label="💰 Income",
             value=f"₹{total_income:,.0f}",
             delta=None
         )
+        st.markdown('</div>', unsafe_allow_html=True)
     
     with row1_col2:
+        st.markdown('<div class="expense-card">', unsafe_allow_html=True)
         st.metric(
             label="💸 Expense",
             value=f"₹{total_expense:,.0f}",
             delta=None
         )
+        st.markdown('</div>', unsafe_allow_html=True)
     
     with row2_col1:
+        st.markdown('<div class="investment-card">', unsafe_allow_html=True)
         st.metric(
             label="📈 Investment",
             value=f"₹{total_investment:,.0f}",
             delta=None
         )
+        st.markdown('</div>', unsafe_allow_html=True)
     
     with row2_col2:
+        balance_class = "balance-card" if net_savings >= 0 else "balance-negative"
+        st.markdown(f'<div class="{balance_class}">', unsafe_allow_html=True)
         st.metric(
             label="💵 Balance",
             value=f"₹{net_savings:,.0f}",
-            delta=None,
-            delta_color="normal" if net_savings >= 0 else "inverse"
+            delta=None
         )
+        st.markdown('</div>', unsafe_allow_html=True)
+        
 else:
-    # Show empty cards if no data in 2x2 grid
+    # Show empty cards if no data in 2x2 grid with colors
     row1_col1, row1_col2 = st.columns(2)
     row2_col1, row2_col2 = st.columns(2)
     
     with row1_col1:
+        st.markdown('<div class="income-card">', unsafe_allow_html=True)
         st.metric(label="💰 Income", value="₹0")
+        st.markdown('</div>', unsafe_allow_html=True)
+        
     with row1_col2:
+        st.markdown('<div class="expense-card">', unsafe_allow_html=True)
         st.metric(label="💸 Expense", value="₹0")
+        st.markdown('</div>', unsafe_allow_html=True)
+        
     with row2_col1:
+        st.markdown('<div class="investment-card">', unsafe_allow_html=True)
         st.metric(label="📈 Investment", value="₹0")
+        st.markdown('</div>', unsafe_allow_html=True)
+        
     with row2_col2:
+        st.markdown('<div class="balance-card">', unsafe_allow_html=True)
         st.metric(label="💵 Balance", value="₹0")
+        st.markdown('</div>', unsafe_allow_html=True)
 
 # Add spacing
 st.markdown("---")
