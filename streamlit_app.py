@@ -190,6 +190,15 @@ st.markdown("""
             padding-right: 1.75rem !important;
         }
     }
+    @media (max-width: 768px) {
+    .block-container .stColumns {
+        flex-wrap: nowrap !important;
+    }
+    .block-container .stColumn {
+        min-width: 50% !important;
+        flex: 1 1 50% !important;
+        }
+    }
     
     /* Hide ALL Streamlit columns and horizontal containers in selector area */
     .selector-area .stHorizontal,
