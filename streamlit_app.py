@@ -4,6 +4,7 @@ import pandas as pd
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 
+st.set_page_config(page_title="Daily Expense Tracker", page_icon="💰", layout="centered")
 # ------------------------------
 # Google Sheets Connection
 # ------------------------------
@@ -29,7 +30,7 @@ client = get_gsheet_connection()
 sheet = client.open("MyFinanceTracker")
 ws = sheet.worksheet("Tracker")
 
-st.set_page_config(page_title="💰 Personal Finance Tracker", layout="centered")
+# st.set_page_config(page_title="💰 Personal Finance Tracker", layout="centered")
 
 # ------------------------------
 # Title and Monthly Summary
