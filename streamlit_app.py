@@ -437,13 +437,13 @@ function enforceYearMonthLayout() {
             horizontalContainer.style.display = 'grid';
             horizontalContainer.style.gridTemplateColumns = '1fr 1fr';
             horizontalContainer.style.gap = '0.5rem';
-            horizontalContainer.style.width = '100%';
+            horizontalContainer.style.width = '50%';
         }
         
         // Force columns to stay side by side
         const columns = container.querySelectorAll('[data-testid="column"]');
         columns.forEach(col => {
-            col.style.width = '100%';
+            col.style.width = '50%';
             col.style.flex = 'none';
             col.style.minWidth = '0';
             col.style.maxWidth = 'none';
