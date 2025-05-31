@@ -7,138 +7,134 @@ from datetime import datetime
 # MUST BE FIRST - Set page config before any other Streamlit commands
 st.set_page_config(page_title="💰 Personal Finance Tracker", layout="centered")
 
-# Simple mobile-optimized CSS with JavaScript fallback
+# Aggressive mobile-optimized CSS with multiple fallback strategies
 st.markdown("""
 <style>
-    /* Force mobile-friendly container */
+    /* Reset and base styles */
     .main .block-container {
         padding-top: 1rem;
-        padding-left: 1rem;
-        padding-right: 1rem;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
         max-width: 100%;
     }
     
-    /* Force 2x2 grid on ALL screen sizes including mobile */
-    div[data-testid="column"] {
-        width: 50% !important;
-        flex: 0 0 50% !important;
-        max-width: 50% !important;
-        padding: 0.25rem !important;
-        box-sizing: border-box !important;
+    /* Custom grid container - override Streamlit's flex behavior */
+    .custom-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        grid-template-rows: auto auto !important;
+        gap: 0.5rem !important;
+        width: 100% !important;
+        margin: 1rem 0 !important;
     }
     
-    .row-widget.stHorizontal {
-        gap: 0 !important;
-        display: flex !important;
-        flex-wrap: nowrap !important;
+    .custom-grid > div {
+        width: 100% !important;
+        min-width: 0 !important;
+        flex: none !important;
     }
     
-    /* Mobile specific adjustments */
-    @media (max-width: 768px) {
-        .main .block-container {
-            padding-left: 0.5rem;
-            padding-right: 0.5rem;
-        }
-        
-        /* Even more aggressive mobile column forcing */
-        div[data-testid="column"] {
-            min-width: 50% !important;
-            flex-shrink: 0 !important;
-        }
-        
-        /* Prevent any stacking behavior */
-        .stHorizontal > div {
-            width: 50% !important;
-        }
+    /* Force override Streamlit's column behavior */
+    .stHorizontal {
+        display: none !important;
+    }
+    
+    /* Hide default Streamlit columns when we use custom grid */
+    .custom-grid-active div[data-testid="column"] {
+        display: none !important;
     }
     
     /* Style metric containers */
-    div[data-testid="metric-container"] {
-        background-color: #ffffff;
-        border: 1px solid #e0e0e0;
-        padding: 0.75rem;
-        border-radius: 8px;
-        margin: 0.25rem 0;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        min-height: 80px;
+    .custom-metric {
+        background: linear-gradient(135deg, #ffffff, #f8f9fa);
+        border: 2px solid #e0e0e0;
+        padding: 1rem;
+        border-radius: 12px;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: transform 0.2s ease;
+        min-height: 100px;
         display: flex;
         flex-direction: column;
         justify-content: center;
     }
     
-    /* Metric label */
-    div[data-testid="metric-container"] div[data-testid="metric-label"] {
-        font-size: 0.8rem;
-        font-weight: 600;
-        margin-bottom: 0.25rem;
+    .custom-metric:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
     }
     
-    /* Metric value */
-    div[data-testid="metric-container"] div[data-testid="metric-value"] {
-        font-size: 1.1rem;
+    .custom-metric .metric-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #6c757d;
+    }
+    
+    .custom-metric .metric-value {
+        font-size: 1.4rem;
         font-weight: 700;
+        color: #333;
     }
     
     /* Color coding for different metrics */
-    div[data-testid="metric-container"]:has(div[data-testid="metric-label"]:contains("Income")) {
-        background: linear-gradient(135deg, #d4edda, #c3e6cb);
-        border-color: #28a745;
+    .metric-income {
+        background: linear-gradient(135deg, #d4edda, #c3e6cb) !important;
+        border-color: #28a745 !important;
     }
     
-    div[data-testid="metric-container"]:has(div[data-testid="metric-label"]:contains("Expense")) {
-        background: linear-gradient(135deg, #f8d7da, #f5c6cb);
-        border-color: #dc3545;
+    .metric-expense {
+        background: linear-gradient(135deg, #f8d7da, #f5c6cb) !important;
+        border-color: #dc3545 !important;
     }
     
-    div[data-testid="metric-container"]:has(div[data-testid="metric-label"]:contains("Investment")) {
-        background: linear-gradient(135deg, #d1ecf1, #bee5eb);
-        border-color: #17a2b8;
+    .metric-investment {
+        background: linear-gradient(135deg, #d1ecf1, #bee5eb) !important;
+        border-color: #17a2b8 !important;
     }
     
-    div[data-testid="metric-container"]:has(div[data-testid="metric-label"]:contains("Balance")) {
-        background: linear-gradient(135deg, #fff3cd, #ffeaa7);
-        border-color: #ffc107;
+    .metric-balance {
+        background: linear-gradient(135deg, #fff3cd, #ffeaa7) !important;
+        border-color: #ffc107 !important;
+    }
+    
+    /* Mobile specific - even more aggressive */
+    @media (max-width: 768px) {
+        .main .block-container {
+            padding-left: 0.25rem;
+            padding-right: 0.25rem;
+        }
+        
+        .custom-grid {
+            gap: 0.25rem !important;
+        }
+        
+        .custom-metric {
+            padding: 0.75rem;
+            min-height: 90px;
+        }
+        
+        .custom-metric .metric-value {
+            font-size: 1.2rem;
+        }
     }
     
     /* Reduce header sizes */
-    h1 { font-size: 1.5rem; }
-    h2 { font-size: 1.25rem; }
-    h3 { font-size: 1.1rem; }
+    h1 { font-size: 1.5rem; margin: 0.5rem 0; }
+    h2 { font-size: 1.25rem; margin: 0.5rem 0; }
+    h3 { font-size: 1.1rem; margin: 0.5rem 0; }
     
     /* Form styling */
     .stSelectbox label, .stDateInput label, .stTextInput label, .stNumberInput label {
         font-size: 0.9rem;
     }
-</style>
-
-<script>
-    // JavaScript fallback to force 2x2 grid on mobile
-    function forceMobileGrid() {
-        const columns = document.querySelectorAll('[data-testid="column"]');
-        columns.forEach(col => {
-            col.style.width = '50%';
-            col.style.flex = '0 0 50%';
-            col.style.maxWidth = '50%';
-            col.style.minWidth = '50%';
-            col.style.padding = '0.25rem';
-            col.style.boxSizing = 'border-box';
-        });
-        
-        const horizontalRows = document.querySelectorAll('.row-widget.stHorizontal');
-        horizontalRows.forEach(row => {
-            row.style.display = 'flex';
-            row.style.flexWrap = 'nowrap';
-            row.style.gap = '0';
-        });
+    
+    /* Hide any potential Streamlit column containers in grid section */
+    .grid-section .stHorizontal,
+    .grid-section div[data-testid="column"] {
+        display: none !important;
     }
-    
-    // Run on load and resize
-    window.addEventListener('load', forceMobileGrid);
-    window.addEventListener('resize', forceMobileGrid);
-    
-    // Run periodically in case Streamlit re-renders
-    setInterval(forceMobileGrid, 1000);
-</script>
+</style>
 """, unsafe_allow_html=True)
 
 # Connect to Google Sheets
@@ -198,6 +194,15 @@ SUBCATEGORIES = {
     ]
 }
 
+# Custom metric component function
+def create_custom_metric_card(label, value, metric_type):
+    return f"""
+    <div class="custom-metric metric-{metric_type}">
+        <div class="metric-label">{label}</div>
+        <div class="metric-value">{value}</div>
+    </div>
+    """
+
 # Load worksheet
 client = get_gsheet_connection()
 sheet = client.open("MyFinanceTracker")  # CHANGE to your Sheet name
@@ -213,6 +218,7 @@ st.header("📊 Monthly Summary")
 # Load data
 data = ws.get_all_records()
 df = pd.DataFrame(data)
+
 if not df.empty:
     df["Date"] = pd.to_datetime(df["Date"])
     
@@ -249,50 +255,71 @@ if not df.empty:
     total_investment = selected_month_df[selected_month_df["Category"] == "Investment"]["Amount (₹)"].sum()
     net_savings = total_income - total_expense - total_investment
     
-    # Display selected month/year in the cards section
+    # Display selected month/year
     st.subheader(f"📅 {selected_month_name} {selected_year}")
     
-    # Display summary cards in 2x2 grid - simplified without wrapper divs
-    row1_col1, row1_col2 = st.columns(2)
-    row2_col1, row2_col2 = st.columns(2)
+    # Create custom 2x2 grid using HTML - completely bypass Streamlit columns
+    grid_html = f"""
+    <div class="custom-grid">
+        {create_custom_metric_card("💰 Income", f"₹{total_income:,.0f}", "income")}
+        {create_custom_metric_card("💸 Expense", f"₹{total_expense:,.0f}", "expense")}
+        {create_custom_metric_card("📈 Investment", f"₹{total_investment:,.0f}", "investment")}
+        {create_custom_metric_card("💵 Balance", f"₹{net_savings:,.0f}", "balance")}
+    </div>
+    """
     
-    with row1_col1:
-        st.metric(
-            label="💰 Income",
-            value=f"₹{total_income:,.0f}"
-        )
-    
-    with row1_col2:
-        st.metric(
-            label="💸 Expense",
-            value=f"₹{total_expense:,.0f}"
-        )
-    
-    with row2_col1:
-        st.metric(
-            label="📈 Investment",
-            value=f"₹{total_investment:,.0f}"
-        )
-    
-    with row2_col2:
-        st.metric(
-            label="💵 Balance",
-            value=f"₹{net_savings:,.0f}"
-        )
+    st.markdown(grid_html, unsafe_allow_html=True)
         
 else:
-    # Show empty cards if no data in 2x2 grid
-    row1_col1, row1_col2 = st.columns(2)
-    row2_col1, row2_col2 = st.columns(2)
+    # Show empty cards if no data
+    st.subheader(f"📅 {datetime.now().strftime('%B %Y')}")
     
-    with row1_col1:
-        st.metric(label="💰 Income", value="₹0")
-    with row1_col2:
-        st.metric(label="💸 Expense", value="₹0") 
-    with row2_col1:
-        st.metric(label="📈 Investment", value="₹0")
-    with row2_col2:
-        st.metric(label="💵 Balance", value="₹0")
+    grid_html = f"""
+    <div class="custom-grid">
+        {create_custom_metric_card("💰 Income", "₹0", "income")}
+        {create_custom_metric_card("💸 Expense", "₹0", "expense")}
+        {create_custom_metric_card("📈 Investment", "₹0", "investment")}
+        {create_custom_metric_card("💵 Balance", "₹0", "balance")}
+    </div>
+    """
+    
+    st.markdown(grid_html, unsafe_allow_html=True)
+
+# Add JavaScript to ensure grid stays intact
+st.markdown("""
+<script>
+function enforceCustomGrid() {
+    // Hide any Streamlit columns that might interfere
+    const columns = document.querySelectorAll('div[data-testid="column"]');
+    columns.forEach(col => {
+        const parent = col.closest('.custom-grid');
+        if (!parent) {
+            // Only hide columns that are not part of our custom grid
+            const hasGridSibling = col.parentElement && col.parentElement.querySelector('.custom-grid');
+            if (hasGridSibling) {
+                col.style.display = 'none';
+            }
+        }
+    });
+    
+    // Ensure our custom grid maintains its structure
+    const grids = document.querySelectorAll('.custom-grid');
+    grids.forEach(grid => {
+        grid.style.display = 'grid';
+        grid.style.gridTemplateColumns = '1fr 1fr';
+        grid.style.gridTemplateRows = 'auto auto';
+    });
+}
+
+// Run immediately and on any DOM changes
+enforceCustomGrid();
+const observer = new MutationObserver(enforceCustomGrid);
+observer.observe(document.body, { childList: true, subtree: true });
+
+// Also run on resize
+window.addEventListener('resize', enforceCustomGrid);
+</script>
+""", unsafe_allow_html=True)
 
 # Add spacing
 st.markdown("---")
