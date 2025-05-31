@@ -7,7 +7,7 @@ from datetime import datetime
 # MUST BE FIRST - Set page config before any other Streamlit commands
 st.set_page_config(page_title="💰 Personal Finance Tracker", layout="centered")
 
-# Simple mobile-optimized CSS
+# Simple mobile-optimized CSS with JavaScript fallback
 st.markdown("""
 <style>
     /* Force mobile-friendly container */
@@ -18,23 +18,37 @@ st.markdown("""
         max-width: 100%;
     }
     
-    /* Ensure columns stack properly on mobile */
+    /* Force 2x2 grid on ALL screen sizes including mobile */
+    div[data-testid="column"] {
+        width: 50% !important;
+        flex: 0 0 50% !important;
+        max-width: 50% !important;
+        padding: 0.25rem !important;
+        box-sizing: border-box !important;
+    }
+    
+    .row-widget.stHorizontal {
+        gap: 0 !important;
+        display: flex !important;
+        flex-wrap: nowrap !important;
+    }
+    
+    /* Mobile specific adjustments */
     @media (max-width: 768px) {
         .main .block-container {
             padding-left: 0.5rem;
             padding-right: 0.5rem;
         }
         
-        /* Force 2x2 grid on mobile */
+        /* Even more aggressive mobile column forcing */
         div[data-testid="column"] {
-            width: 50% !important;
-            flex: 0 0 50% !important;
-            max-width: 50% !important;
-            padding: 0.25rem !important;
+            min-width: 50% !important;
+            flex-shrink: 0 !important;
         }
         
-        .row-widget.stHorizontal {
-            gap: 0 !important;
+        /* Prevent any stacking behavior */
+        .stHorizontal > div {
+            width: 50% !important;
         }
     }
     
@@ -96,6 +110,35 @@ st.markdown("""
         font-size: 0.9rem;
     }
 </style>
+
+<script>
+    // JavaScript fallback to force 2x2 grid on mobile
+    function forceMobileGrid() {
+        const columns = document.querySelectorAll('[data-testid="column"]');
+        columns.forEach(col => {
+            col.style.width = '50%';
+            col.style.flex = '0 0 50%';
+            col.style.maxWidth = '50%';
+            col.style.minWidth = '50%';
+            col.style.padding = '0.25rem';
+            col.style.boxSizing = 'border-box';
+        });
+        
+        const horizontalRows = document.querySelectorAll('.row-widget.stHorizontal');
+        horizontalRows.forEach(row => {
+            row.style.display = 'flex';
+            row.style.flexWrap = 'nowrap';
+            row.style.gap = '0';
+        });
+    }
+    
+    // Run on load and resize
+    window.addEventListener('load', forceMobileGrid);
+    window.addEventListener('resize', forceMobileGrid);
+    
+    // Run periodically in case Streamlit re-renders
+    setInterval(forceMobileGrid, 1000);
+</script>
 """, unsafe_allow_html=True)
 
 # Connect to Google Sheets
