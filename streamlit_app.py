@@ -18,7 +18,7 @@ st.markdown("""
     }
     
     /* Compact metric styling with colors */
-    [data-testid="metric-container"] {
+    div[data-testid="metric-container"] {
         padding: 0.3rem !important;
         border-radius: 0.4rem !important;
         margin: 0.15rem 0 !important;
@@ -26,52 +26,56 @@ st.markdown("""
         border: 1px solid !important;
     }
     
-    [data-testid="metric-container"] > div {
+    div[data-testid="metric-container"] > div {
         width: fit-content !important;
         margin: auto !important;
         text-align: center !important;
     }
     
     /* Label styling - smaller font */
-    [data-testid="metric-container"] label {
+    div[data-testid="metric-container"] div[data-testid="metric-label"] {
         font-size: 0.65rem !important;
         font-weight: 600 !important;
         margin-bottom: 0.1rem !important;
-        display: block !important;
     }
     
     /* Value styling - much smaller numbers */
-    [data-testid="metric-container"] [data-testid="metric-value"] {
-        font-size: 0.35rem !important;
-        font-weight: 400 !important;
+    div[data-testid="metric-container"] div[data-testid="metric-value"] {
+        font-size: 0.45rem !important;
+        font-weight: 700 !important;
         line-height: 1.1 !important;
     }
     
+    /* Alternative selector for metric values */
+    div[data-testid="metric-container"] div[data-testid="metric-value"] > div {
+        font-size: 0.75rem !important;
+    }
+    
     /* Delta styling */
-    [data-testid="metric-container"] [data-testid="metric-delta"] {
+    div[data-testid="metric-container"] div[data-testid="metric-delta"] {
         font-size: 0.55rem !important;
     }
     
     /* Color coding by position - Income (first metric) */
-    [data-testid="metric-container"]:nth-of-type(1) {
+    div[data-testid="metric-container"]:nth-of-type(1) {
         background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%) !important;
         border-color: #28a745 !important;
     }
     
     /* Expense (second metric) */
-    [data-testid="metric-container"]:nth-of-type(2) {
+    div[data-testid="metric-container"]:nth-of-type(2) {
         background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%) !important;
         border-color: #dc3545 !important;
     }
     
     /* Investment (third metric) */
-    [data-testid="metric-container"]:nth-of-type(3) {
+    div[data-testid="metric-container"]:nth-of-type(3) {
         background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%) !important;
         border-color: #17a2b8 !important;
     }
     
     /* Balance (fourth metric) */
-    [data-testid="metric-container"]:nth-of-type(4) {
+    div[data-testid="metric-container"]:nth-of-type(4) {
         background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%) !important;
         border-color: #ffc107 !important;
     }
