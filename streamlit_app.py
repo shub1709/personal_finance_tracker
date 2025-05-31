@@ -281,11 +281,11 @@ if not df.empty:
             display: grid !important;
             grid-template-columns: 1fr 1fr !important;
             gap: 0.5rem !important;
-            width: 100% !important;
+            width: 50% !important;
         }
         
         .year-month-container > div {
-            width: 100% !important;
+            width: 50% !important;
             min-width: 0 !important;
         }
         
@@ -295,11 +295,11 @@ if not df.empty:
             display: grid !important;
             grid-template-columns: 1fr 1fr !important;
             gap: 0.5rem !important;
-            width: 100% !important;
+            width: 50% !important;
         }
         
         .year-month-container div[data-testid="column"] {
-            width: 100% !important;
+            width: 50% !important;
             flex: none !important;
             min-width: 0 !important;
             max-width: none !important;
@@ -315,7 +315,7 @@ if not df.empty:
             }
             
             .year-month-container div[data-testid="column"] {
-                width: 100% !important;
+                width: 50% !important;
                 display: block !important;
             }
         }
@@ -429,7 +429,7 @@ function enforceYearMonthLayout() {
         container.style.display = 'grid';
         container.style.gridTemplateColumns = '1fr 1fr';
         container.style.gap = '0.5rem';
-        container.style.width = '100%';
+        container.style.width = '50%';
         
         // Find and force the horizontal container
         const horizontalContainer = container.querySelector('.stHorizontal, .row-widget');
