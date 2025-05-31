@@ -117,4 +117,4 @@ with st.form("entry_form"):
         ws.append_row([str(date), category, subcategory, description, amount])
         st.success("✅ Entry added!")
         st.session_state["form_submitted"] = True
-        st.experimental_rerun()
+        st.rerun()
