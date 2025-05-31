@@ -129,37 +129,56 @@ st.markdown("""
         font-size: 0.9rem;
     }
     
-    /* Force side-by-side layout for form elements */
-    .form-row {
-        display: flex !important;
+    /* Custom selector grid - similar to metrics grid */
+    .selector-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
         gap: 0.5rem !important;
+        width: 100% !important;
+        margin: 0.5rem 0 !important;
+    }
+    
+    .selector-grid > div {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+    
+    .custom-selector {
         width: 100% !important;
     }
     
-    .form-row > div {
-        flex: 1 !important;
-        min-width: 0 !important;
-    }
-    
-    /* Force year/month selectors to stay side by side on mobile */
-    .year-month-row .stHorizontal {
-        display: flex !important;
-        gap: 0.5rem !important;
-        flex-wrap: nowrap !important;
-    }
-    
-    .year-month-row div[data-testid="column"] {
-        width: 50% !important;
-        flex: 1 !important;
-        min-width: 0 !important;
+    .custom-selector label {
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 0.25rem !important;
         display: block !important;
+        color: #333 !important;
+    }
+    
+    .custom-selector select {
+        width: 100% !important;
+        padding: 0.5rem !important;
+        border: 1px solid #ccc !important;
+        border-radius: 6px !important;
+        font-size: 0.9rem !important;
+        background-color: white !important;
     }
     
     /* Mobile specific for selectors */
     @media (max-width: 768px) {
-        .year-month-row .stSelectbox {
-            margin-bottom: 0.5rem;
+        .selector-grid {
+            gap: 0.25rem !important;
         }
+        
+        .custom-selector select {
+            padding: 0.4rem !important;
+            font-size: 0.85rem !important;
+        }
+    }
+    
+    /* Hide original Streamlit selectors when using custom grid */
+    .selector-grid-active .stSelectbox {
+        display: none !important;
     }
     
     /* Hide any potential Streamlit column containers in grid section */
@@ -255,8 +274,55 @@ df = pd.DataFrame(data)
 if not df.empty:
     df["Date"] = pd.to_datetime(df["Date"])
     
-    # Month and Year selection - wrap in container to force side-by-side
-    st.markdown('<div class="year-month-row">', unsafe_allow_html=True)
+    # Month and Year selection with aggressive mobile CSS
+    st.markdown("""
+    <style>
+        .year-month-container {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 0.5rem !important;
+            width: 100% !important;
+        }
+        
+        .year-month-container > div {
+            width: 100% !important;
+            min-width: 0 !important;
+        }
+        
+        /* Override ALL Streamlit responsive behavior for this section */
+        .year-month-container .stHorizontal,
+        .year-month-container .row-widget {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 0.5rem !important;
+            width: 100% !important;
+        }
+        
+        .year-month-container div[data-testid="column"] {
+            width: 100% !important;
+            flex: none !important;
+            min-width: 0 !important;
+            max-width: none !important;
+        }
+        
+        /* Force on mobile - most aggressive approach */
+        @media (max-width: 768px) {
+            .year-month-container .stHorizontal,
+            .year-month-container .row-widget {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr !important;
+                gap: 0.25rem !important;
+            }
+            
+            .year-month-container div[data-testid="column"] {
+                width: 100% !important;
+                display: block !important;
+            }
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    st.markdown('<div class="year-month-container">', unsafe_allow_html=True)
     col1, col2 = st.columns(2)
     
     with col1:
@@ -280,7 +346,7 @@ if not df.empty:
         selected_month_name = st.selectbox("Select Month", month_names, index=default_month_index)
         selected_month = datetime.strptime(selected_month_name, '%B').month
     
-    st.markdown('</div>', unsafe_allow_html=True)  # Close year-month-row div
+    st.markdown('</div>', unsafe_allow_html=True)
     
     # Filter for selected month and year
     selected_month_df = df[(df["Date"].dt.month == selected_month) & (df["Date"].dt.year == selected_year)]
@@ -357,30 +423,40 @@ window.addEventListener('resize', enforceCustomGrid);
 
 // Additional function to enforce year-month row layout
 function enforceYearMonthLayout() {
-    const yearMonthRow = document.querySelector('.year-month-row');
-    if (yearMonthRow) {
-        const horizontalContainer = yearMonthRow.querySelector('.stHorizontal');
+    const container = document.querySelector('.year-month-container');
+    if (container) {
+        // Force the container to be a grid
+        container.style.display = 'grid';
+        container.style.gridTemplateColumns = '1fr 1fr';
+        container.style.gap = '0.5rem';
+        container.style.width = '100%';
+        
+        // Find and force the horizontal container
+        const horizontalContainer = container.querySelector('.stHorizontal, .row-widget');
         if (horizontalContainer) {
-            horizontalContainer.style.display = 'flex';
+            horizontalContainer.style.display = 'grid';
+            horizontalContainer.style.gridTemplateColumns = '1fr 1fr';
             horizontalContainer.style.gap = '0.5rem';
-            horizontalContainer.style.flexWrap = 'nowrap';
+            horizontalContainer.style.width = '100%';
         }
         
-        const columns = yearMonthRow.querySelectorAll('[data-testid="column"]');
+        // Force columns to stay side by side
+        const columns = container.querySelectorAll('[data-testid="column"]');
         columns.forEach(col => {
-            col.style.width = '50%';
-            col.style.flex = '1';
+            col.style.width = '100%';
+            col.style.flex = 'none';
             col.style.minWidth = '0';
+            col.style.maxWidth = 'none';
             col.style.display = 'block';
         });
     }
 }
 
-// Run both functions
+// Run both functions more frequently for mobile
 setInterval(() => {
     enforceCustomGrid();
     enforceYearMonthLayout();
-}, 100);
+}, 50);  // More frequent checks
 </script>
 """, unsafe_allow_html=True)
 
