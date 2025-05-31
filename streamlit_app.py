@@ -5,6 +5,82 @@ from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 
 st.set_page_config(page_title="Daily Expense Tracker", page_icon="💰", layout="centered")
+
+# Add custom CSS for mobile optimization
+st.markdown("""
+<style>
+    /* Mobile-first responsive design */
+    .main .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    /* Compact metric styling */
+    [data-testid="metric-container"] {
+        background-color: #f0f2f6;
+        border: 1px solid #e0e0e0;
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        margin: 0.25rem 0;
+    }
+    
+    [data-testid="metric-container"] > div {
+        width: fit-content;
+        margin: auto;
+    }
+    
+    [data-testid="metric-container"] > div > div {
+        font-size: 0.8rem !important;
+        font-weight: 600;
+    }
+    
+    [data-testid="metric-container"] > div > div[data-testid="metric-value"] {
+        font-size: 1.1rem !important;
+        font-weight: 700;
+    }
+    
+    /* Compact headers */
+    h4, h6, h7 {
+        margin-bottom: 0.5rem !important;
+        margin-top: 0.5rem !important;
+    }
+    
+    /* Form spacing */
+    .stForm {
+        border: 1px solid #e0e0e0;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-top: 0.5rem;
+    }
+    
+    /* Selectbox and input styling */
+    .stSelectbox > div > div {
+        font-size: 0.9rem;
+    }
+    
+    .stTextInput > div > div {
+        font-size: 0.9rem;
+    }
+    
+    .stNumberInput > div > div {
+        font-size: 0.9rem;
+    }
+    
+    /* Button styling */
+    .stButton > button {
+        width: 100%;
+        font-size: 0.9rem;
+    }
+    
+    /* Divider spacing */
+    hr {
+        margin: 1rem 0 !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # ------------------------------
 # Google Sheets Connection
 # ------------------------------
@@ -30,13 +106,11 @@ client = get_gsheet_connection()
 sheet = client.open("MyFinanceTracker")
 ws = sheet.worksheet("Tracker")
 
-# st.set_page_config(page_title="💰 Personal Finance Tracker", layout="centered")
-
 # ------------------------------
 # Title and Monthly Summary
 # ------------------------------
-st.markdown("<h4 style='text-align: center;'>💸 Daily Tracker</h4>", unsafe_allow_html=True)
-st.markdown("<h6 style='text-align: center;'>📊 Monthly Summary</h6>", unsafe_allow_html=True)
+st.markdown("<h4 style='text-align: center; font-size: 1.3rem;'>💸 Daily Tracker</h4>", unsafe_allow_html=True)
+st.markdown("<h6 style='text-align: center; font-size: 1rem;'>📊 Monthly Summary</h6>", unsafe_allow_html=True)
 
 # Load data
 data = ws.get_all_records()
@@ -45,15 +119,16 @@ df = pd.DataFrame(data)
 if not df.empty:
     df["Date"] = pd.to_datetime(df["Date"])
 
+    # Compact year/month selection
     col1, col2 = st.columns(2)
     with col1:
         years = sorted(df["Date"].dt.year.unique(), reverse=True)
-        selected_year = st.selectbox("Select Year", years, index=0)
+        selected_year = st.selectbox("Year", years, index=0)
     with col2:
         year_df = df[df["Date"].dt.year == selected_year]
         months = sorted(year_df["Date"].dt.month.unique())
         month_names = [datetime(2000, m, 1).strftime('%B') for m in months]
-        selected_month_name = st.selectbox("Select Month", month_names, index=len(month_names)-1)
+        selected_month_name = st.selectbox("Month", month_names, index=len(month_names)-1)
         selected_month = datetime.strptime(selected_month_name, "%B").month
 
     month_df = df[(df["Date"].dt.year == selected_year) & (df["Date"].dt.month == selected_month)]
@@ -64,31 +139,41 @@ if not df.empty:
     invest = month_df[month_df["Category"] == "Investment"]["Amount (₹)"].sum()
     savings = income - expense - invest
 
-    st.markdown(f"<h7 style='text-align: center;'>📅 {selected_month_name} {selected_year}</h7>", unsafe_allow_html=True)
+    st.markdown(f"<div style='text-align: center; font-size: 0.9rem; margin: 0.5rem 0;'>📅 {selected_month_name} {selected_year}</div>", unsafe_allow_html=True)
 
-    # Responsive 2x2 metric layout
-    row1, row2 = st.columns(2)
-    with row1:
+    # True 2x2 grid layout for metrics
+    row1_col1, row1_col2 = st.columns(2)
+    row2_col1, row2_col2 = st.columns(2)
+    
+    with row1_col1:
         st.metric("💰 Income", f"₹{income:,.0f}")
-    with row2:
+    with row1_col2:
         st.metric("💸 Expense", f"₹{expense:,.0f}")
-
-    row3, row4 = st.columns(2)
-    with row3:
+    with row2_col1:
         st.metric("📈 Investment", f"₹{invest:,.0f}")
-    with row4:
+    with row2_col2:
         st.metric("💵 Balance", f"₹{savings:,.0f}", delta_color="inverse" if savings < 0 else "normal")
 
 else:
-    for label in ["💰 Income", "💸 Expense", "📈 Investment", "💵 Balance"]:
-        st.metric(label, "₹0")
+    # Empty state with 2x2 grid
+    row1_col1, row1_col2 = st.columns(2)
+    row2_col1, row2_col2 = st.columns(2)
+    
+    with row1_col1:
+        st.metric("💰 Income", "₹0")
+    with row1_col2:
+        st.metric("💸 Expense", "₹0")
+    with row2_col1:
+        st.metric("📈 Investment", "₹0")
+    with row2_col2:
+        st.metric("💵 Balance", "₹0")
 
 st.markdown("---")
 
 # ------------------------------
 # Transaction Entry Form
 # ------------------------------
-st.markdown("<h6 style='text-align: center;'>📝 Add New Entry</h6>", unsafe_allow_html=True)
+st.markdown("<h6 style='text-align: center; font-size: 1rem;'>📝 Add New Entry</h6>", unsafe_allow_html=True)
 
 # Initialize form state
 if "form_submitted" not in st.session_state:
@@ -99,7 +184,7 @@ if st.session_state["form_submitted"]:
     st.session_state["amount"] = 0.0
     st.session_state["form_submitted"] = False
 
-# Outside form - for dynamic subcategory
+# Compact form layout
 col1, col2 = st.columns(2)
 with col1:
     date = st.date_input("Date", datetime.today())
