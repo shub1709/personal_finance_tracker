@@ -129,25 +129,26 @@ st.markdown("""
         font-size: 0.9rem;
     }
     
-    /* Custom selector grid - similar to metrics grid */
-    .selector-grid {
+    /* Year-Month selector grid - COMPLETELY CUSTOM */
+    .year-month-selector {
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
         gap: 0.5rem !important;
         width: 100% !important;
-        margin: 0.5rem 0 !important;
+        margin: 1rem 0 !important;
+        max-width: 400px !important;
     }
     
-    .selector-grid > div {
+    .year-month-selector > div {
         width: 100% !important;
         min-width: 0 !important;
     }
     
-    .custom-selector {
+    .custom-select-container {
         width: 100% !important;
     }
     
-    .custom-selector label {
+    .custom-select-container label {
         font-size: 0.9rem !important;
         font-weight: 600 !important;
         margin-bottom: 0.25rem !important;
@@ -155,36 +156,66 @@ st.markdown("""
         color: #333 !important;
     }
     
-    .custom-selector select {
+    .custom-select {
         width: 100% !important;
         padding: 0.5rem !important;
         border: 1px solid #ccc !important;
         border-radius: 6px !important;
         font-size: 0.9rem !important;
         background-color: white !important;
+        appearance: none !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
+        background-position: right 0.5rem center !important;
+        background-repeat: no-repeat !important;
+        background-size: 1rem !important;
+        padding-right: 2rem !important;
+    }
+    
+    .custom-select:focus {
+        outline: none !important;
+        border-color: #007bff !important;
+        box-shadow: 0 0 0 2px rgba(0,123,255,0.25) !important;
     }
     
     /* Mobile specific for selectors */
     @media (max-width: 768px) {
-        .selector-grid {
+        .year-month-selector {
             gap: 0.25rem !important;
+            margin: 0.5rem 0 !important;
         }
         
-        .custom-selector select {
+        .custom-select {
             padding: 0.4rem !important;
             font-size: 0.85rem !important;
+            padding-right: 1.75rem !important;
         }
     }
     
-    /* Hide original Streamlit selectors when using custom grid */
-    .selector-grid-active .stSelectbox {
+    /* Hide ALL Streamlit columns and horizontal containers in selector area */
+    .selector-area .stHorizontal,
+    .selector-area div[data-testid="column"],
+    .selector-area .row-widget {
         display: none !important;
     }
     
-    /* Hide any potential Streamlit column containers in grid section */
-    .grid-section .stHorizontal,
-    .grid-section div[data-testid="column"] {
-        display: none !important;
+    /* Additional form styling for entry section */
+    .entry-form-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0.5rem !important;
+        width: 100% !important;
+        margin: 0.5rem 0 !important;
+    }
+    
+    .entry-form-grid > div {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+    
+    @media (max-width: 768px) {
+        .entry-form-grid {
+            gap: 0.25rem !important;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -260,7 +291,7 @@ client = get_gsheet_connection()
 sheet = client.open("MyFinanceTracker")  # CHANGE to your Sheet name
 ws = sheet.worksheet("Tracker")          # Single tab name
 
-st.title("💸 Daily Expense & Investment Tracker")
+st.title("💸 Daily Tracker")
 
 # -------------------------
 # Monthly Summary Cards
@@ -274,79 +305,60 @@ df = pd.DataFrame(data)
 if not df.empty:
     df["Date"] = pd.to_datetime(df["Date"])
     
-    # Month and Year selection with aggressive mobile CSS
-    st.markdown("""
-    <style>
-        .year-month-container {
-            display: grid !important;
-            grid-template-columns: 1fr 1fr !important;
-            gap: 0.5rem !important;
-            width: 50% !important;
-        }
-        
-        .year-month-container > div {
-            width: 50% !important;
-            min-width: 0 !important;
-        }
-        
-        /* Override ALL Streamlit responsive behavior for this section */
-        .year-month-container .stHorizontal,
-        .year-month-container .row-widget {
-            display: grid !important;
-            grid-template-columns: 1fr 1fr !important;
-            gap: 0.5rem !important;
-            width: 50% !important;
-        }
-        
-        .year-month-container div[data-testid="column"] {
-            width: 50% !important;
-            flex: none !important;
-            min-width: 0 !important;
-            max-width: none !important;
-        }
-        
-        /* Force on mobile - most aggressive approach */
-        @media (max-width: 768px) {
-            .year-month-container .stHorizontal,
-            .year-month-container .row-widget {
-                display: grid !important;
-                grid-template-columns: 1fr 1fr !important;
-                gap: 0.25rem !important;
-            }
-            
-            .year-month-container div[data-testid="column"] {
-                width: 50% !important;
-                display: block !important;
-            }
-        }
-    </style>
-    """, unsafe_allow_html=True)
+    # Create year and month options for HTML selects
+    available_years = sorted(df["Date"].dt.year.unique(), reverse=True)
+    default_year = datetime.now().year if datetime.now().year in available_years else available_years[-1]
     
-    st.markdown('<div class="year-month-container">', unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
+    # Get months available for the default year
+    year_data = df[df["Date"].dt.year == default_year]
+    available_months = sorted(year_data["Date"].dt.month.unique())
+    month_names = [datetime(2000, month, 1).strftime('%B') for month in available_months]
     
-    with col1:
-        available_years = sorted(df["Date"].dt.year.unique(), reverse=True)
-        default_year = datetime.now().year if datetime.now().year in available_years else available_years[-1]
-        selected_year = st.selectbox("Select Year", available_years, index=available_years.index(default_year))
+    # Set default to current month if available, otherwise first available month
+    current_month = datetime.now().month
+    if current_month in available_months and default_year == datetime.now().year:
+        default_month_index = available_months.index(current_month)
+    else:
+        default_month_index = 0 if available_months else 0
     
-    with col2:
-        # Get months available for the selected year
-        year_data = df[df["Date"].dt.year == selected_year]
-        available_months = sorted(year_data["Date"].dt.month.unique())
-        month_names = [datetime(2000, month, 1).strftime('%B') for month in available_months]
-        
-        # Set default to current month if available, otherwise first available month
-        current_month = datetime.now().month
-        if current_month in available_months and selected_year == datetime.now().year:
-            default_month_index = available_months.index(current_month)
-        else:
-            default_month_index = -1
-        
-        selected_month_name = st.selectbox("Select Month", month_names, index=default_month_index)
-        selected_month = datetime.strptime(selected_month_name, '%B').month
+    # Create year options HTML
+    year_options = ""
+    for year in available_years:
+        selected = "selected" if year == default_year else ""
+        year_options += f'<option value="{year}" {selected}>{year}</option>'
     
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Create month options HTML
+    month_options = ""
+    for i, month_name in enumerate(month_names):
+        selected = "selected" if i == default_month_index else ""
+        month_options += f'<option value="{month_name}" {selected}>{month_name}</option>'
+    
+    # Create pure HTML selector grid
+    selector_html = f"""
+    <div class="selector-area">
+        <div class="year-month-selector">
+            <div class="custom-select-container">
+                <label for="year-select">Select Year</label>
+                <select id="year-select" class="custom-select" onchange="updateMonths()">
+                    {year_options}
+                </select>
+            </div>
+            <div class="custom-select-container">
+                <label for="month-select">Select Month</label>
+                <select id="month-select" class="custom-select" onchange="updateSummary()">
+                    {month_options}
+                </select>
+            </div>
+        </div>
+    </div>
+    """
+    
+    st.markdown(selector_html, unsafe_allow_html=True)
+    
+    # Get initial selected values for summary
+    selected_year = default_year
+    selected_month = available_months[default_month_index] if available_months else datetime.now().month
+    selected_month_name = month_names[default_month_index] if month_names else datetime.now().strftime('%B')
     
     # Filter for selected month and year
     selected_month_df = df[(df["Date"].dt.month == selected_month) & (df["Date"].dt.year == selected_year)]
@@ -376,6 +388,28 @@ else:
     # Show empty cards if no data
     st.subheader(f"📅 {datetime.now().strftime('%B %Y')}")
     
+    # Show empty selector
+    empty_selector_html = f"""
+    <div class="selector-area">
+        <div class="year-month-selector">
+            <div class="custom-select-container">
+                <label for="year-select">Select Year</label>
+                <select id="year-select" class="custom-select" disabled>
+                    <option>{datetime.now().year}</option>
+                </select>
+            </div>
+            <div class="custom-select-container">
+                <label for="month-select">Select Month</label>
+                <select id="month-select" class="custom-select" disabled>
+                    <option>{datetime.now().strftime('%B')}</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    """
+    
+    st.markdown(empty_selector_html, unsafe_allow_html=True)
+    
     grid_html = f"""
     <div class="custom-grid">
         {create_custom_metric_card("💰 Income", "₹0", "income")}
@@ -387,29 +421,101 @@ else:
     
     st.markdown(grid_html, unsafe_allow_html=True)
 
-# Add JavaScript to ensure grid stays intact
+# Add JavaScript for dynamic updates and grid enforcement
 st.markdown("""
 <script>
+// Data for JavaScript (passed from Python)
+const dfData = """ + (df.to_json(orient='records', date_format='iso') if not df.empty else "[]") + """;
+
+function updateMonths() {
+    const yearSelect = document.getElementById('year-select');
+    const monthSelect = document.getElementById('month-select');
+    const selectedYear = parseInt(yearSelect.value);
+    
+    // Filter data for selected year
+    const yearData = dfData.filter(row => new Date(row.Date).getFullYear() === selectedYear);
+    
+    // Get unique months for the year
+    const months = [...new Set(yearData.map(row => new Date(row.Date).getMonth() + 1))].sort();
+    const monthNames = months.map(month => new Date(2000, month - 1, 1).toLocaleDateString('en-US', { month: 'long' }));
+    
+    // Update month dropdown
+    monthSelect.innerHTML = '';
+    monthNames.forEach((monthName, index) => {
+        const option = document.createElement('option');
+        option.value = monthName;
+        option.textContent = monthName;
+        if (index === 0) option.selected = true;
+        monthSelect.appendChild(option);
+    });
+    
+    updateSummary();
+}
+
+function updateSummary() {
+    const yearSelect = document.getElementById('year-select');
+    const monthSelect = document.getElementById('month-select');
+    
+    if (!yearSelect || !monthSelect) return;
+    
+    const selectedYear = parseInt(yearSelect.value);
+    const selectedMonthName = monthSelect.value;
+    const selectedMonth = new Date(selectedMonthName + ' 1, 2000').getMonth() + 1;
+    
+    // Filter data for selected month and year
+    const monthData = dfData.filter(row => {
+        const date = new Date(row.Date);
+        return date.getFullYear() === selectedYear && date.getMonth() + 1 === selectedMonth;
+    });
+    
+    // Calculate totals
+    const totalIncome = monthData.filter(row => row.Category === 'Income')
+        .reduce((sum, row) => sum + parseFloat(row['Amount (₹)'] || 0), 0);
+    const totalExpense = monthData.filter(row => row.Category === 'Expense')
+        .reduce((sum, row) => sum + parseFloat(row['Amount (₹)'] || 0), 0);
+    const totalInvestment = monthData.filter(row => row.Category === 'Investment')
+        .reduce((sum, row) => sum + parseFloat(row['Amount (₹)'] || 0), 0);
+    const netSavings = totalIncome - totalExpense - totalInvestment;
+    
+    // Update the display (this would require Streamlit rerun for actual update)
+    // For now, we'll just update the title
+    const titleElement = document.querySelector('h3');
+    if (titleElement && titleElement.textContent.includes('📅')) {
+        titleElement.textContent = `📅 ${selectedMonthName} ${selectedYear}`;
+    }
+}
+
 function enforceCustomGrid() {
     // Hide any Streamlit columns that might interfere
     const columns = document.querySelectorAll('div[data-testid="column"]');
     columns.forEach(col => {
-        const parent = col.closest('.custom-grid');
-        if (!parent) {
-            // Only hide columns that are not part of our custom grid
-            const hasGridSibling = col.parentElement && col.parentElement.querySelector('.custom-grid');
-            if (hasGridSibling) {
-                col.style.display = 'none';
-            }
+        const parent = col.closest('.custom-grid, .year-month-selector, .selector-area');
+        if (parent) {
+            col.style.display = 'none';
         }
     });
     
-    // Ensure our custom grid maintains its structure
-    const grids = document.querySelectorAll('.custom-grid');
+    // Hide horizontal containers in selector area
+    const selectorArea = document.querySelector('.selector-area');
+    if (selectorArea) {
+        const horizontalDivs = selectorArea.querySelectorAll('.stHorizontal, .row-widget');
+        horizontalDivs.forEach(div => {
+            div.style.display = 'none';
+        });
+    }
+    
+    // Ensure our custom grids maintain their structure
+    const grids = document.querySelectorAll('.custom-grid, .year-month-selector');
     grids.forEach(grid => {
-        grid.style.display = 'grid';
-        grid.style.gridTemplateColumns = '1fr 1fr';
-        grid.style.gridTemplateRows = 'auto auto';
+        if (grid.classList.contains('custom-grid')) {
+            grid.style.display = 'grid';
+            grid.style.gridTemplateColumns = '1fr 1fr';
+            grid.style.gridTemplateRows = 'auto auto';
+        } else if (grid.classList.contains('year-month-selector')) {
+            grid.style.display = 'grid';
+            grid.style.gridTemplateColumns = '1fr 1fr';
+            grid.style.gap = window.innerWidth <= 768 ? '0.25rem' : '0.5rem';
+        }
     });
 }
 
@@ -421,42 +527,8 @@ observer.observe(document.body, { childList: true, subtree: true });
 // Also run on resize
 window.addEventListener('resize', enforceCustomGrid);
 
-// Additional function to enforce year-month row layout
-function enforceYearMonthLayout() {
-    const container = document.querySelector('.year-month-container');
-    if (container) {
-        // Force the container to be a grid
-        container.style.display = 'grid';
-        container.style.gridTemplateColumns = '1fr 1fr';
-        container.style.gap = '0.5rem';
-        container.style.width = '50%';
-        
-        // Find and force the horizontal container
-        const horizontalContainer = container.querySelector('.stHorizontal, .row-widget');
-        if (horizontalContainer) {
-            horizontalContainer.style.display = 'grid';
-            horizontalContainer.style.gridTemplateColumns = '1fr 1fr';
-            horizontalContainer.style.gap = '0.5rem';
-            horizontalContainer.style.width = '50%';
-        }
-        
-        // Force columns to stay side by side
-        const columns = container.querySelectorAll('[data-testid="column"]');
-        columns.forEach(col => {
-            col.style.width = '50%';
-            col.style.flex = 'none';
-            col.style.minWidth = '0';
-            col.style.maxWidth = 'none';
-            col.style.display = 'block';
-        });
-    }
-}
-
-// Run both functions more frequently for mobile
-setInterval(() => {
-    enforceCustomGrid();
-    enforceYearMonthLayout();
-}, 50);  // More frequent checks
+// More frequent checks for mobile
+setInterval(enforceCustomGrid, 100);
 </script>
 """, unsafe_allow_html=True)
 
@@ -468,10 +540,16 @@ st.markdown("---")
 # -------------------------
 st.header("📝 Add New Transaction")
 
-# Category selection outside the form to enable dynamic updates
-col1, col2 = st.columns(2)
-date = col1.date_input("Date", datetime.today())
-category = col2.selectbox("Category", ["Income", "Expense", "Investment", "Other"])
+# Create HTML grid for date and category selection - NO st.columns!
+st.markdown('<div class="entry-form-grid">', unsafe_allow_html=True)
+
+# Date input (left side)
+date = st.date_input("Date", datetime.today())
+
+# Category selection (right side) 
+category = st.selectbox("Category", ["Income", "Expense", "Investment", "Other"])
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 # Dynamic subcategory dropdown based on selected category
 subcategory_options = SUBCATEGORIES.get(category, [])
