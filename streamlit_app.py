@@ -42,7 +42,7 @@ st.markdown("""
     
     /* Value styling - much smaller numbers */
     [data-testid="metric-container"] [data-testid="metric-value"] {
-        font-size: 0.75rem !important;
+        font-size: 0.55rem !important;
         font-weight: 700 !important;
         line-height: 1.1 !important;
     }
