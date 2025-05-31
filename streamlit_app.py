@@ -35,8 +35,8 @@ ws = sheet.worksheet("Tracker")
 # ------------------------------
 # Title and Monthly Summary
 # ------------------------------
-st.markdown("<h2 style='text-align: center;'>💸 Daily Tracker</h2>", unsafe_allow_html=True)
-st.markdown("<h4 style='text-align: center;'>📊 Monthly Summary</h4>", unsafe_allow_html=True)
+st.markdown("<h4 style='text-align: center;'>💸 Daily Tracker</h4>", unsafe_allow_html=True)
+st.markdown("<h6 style='text-align: center;'>📊 Monthly Summary</h6>", unsafe_allow_html=True)
 
 # Load data
 data = ws.get_all_records()
@@ -64,7 +64,7 @@ if not df.empty:
     invest = month_df[month_df["Category"] == "Investment"]["Amount (₹)"].sum()
     savings = income - expense - invest
 
-    st.markdown(f"<h5 style='text-align: center;'>📅 {selected_month_name} {selected_year}</h5>", unsafe_allow_html=True)
+    st.markdown(f"<h7 style='text-align: center;'>📅 {selected_month_name} {selected_year}</h7>", unsafe_allow_html=True)
 
     # Responsive 2x2 metric layout
     row1, row2 = st.columns(2)
@@ -88,7 +88,7 @@ st.markdown("---")
 # ------------------------------
 # Transaction Entry Form
 # ------------------------------
-st.markdown("<h4 style='text-align: center;'>📝 Add New Entry</h4>", unsafe_allow_html=True)
+st.markdown("<h6 style='text-align: center;'>📝 Add New Entry</h6>", unsafe_allow_html=True)
 
 # Initialize form state
 if "form_submitted" not in st.session_state:
