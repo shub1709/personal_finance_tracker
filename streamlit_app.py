@@ -19,62 +19,59 @@ st.markdown("""
     
     /* Compact metric styling with colors */
     [data-testid="metric-container"] {
-        background-color: #f8f9fa;
-        border: 1px solid #dee2e6;
-        padding: 0.4rem;
-        border-radius: 0.4rem;
-        margin: 0.2rem 0;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        padding: 0.3rem !important;
+        border-radius: 0.4rem !important;
+        margin: 0.15rem 0 !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.12) !important;
+        border: 1px solid !important;
     }
     
     [data-testid="metric-container"] > div {
-        width: fit-content;
-        margin: auto;
-        text-align: center;
+        width: fit-content !important;
+        margin: auto !important;
+        text-align: center !important;
     }
     
-    /* Label styling */
-    [data-testid="metric-container"] > div > div:first-child {
-        font-size: 0.7rem !important;
-        font-weight: 600;
-        margin-bottom: 0.1rem;
+    /* Label styling - smaller font */
+    [data-testid="metric-container"] label {
+        font-size: 0.65rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 0.1rem !important;
+        display: block !important;
     }
     
-    /* Value styling - much smaller */
-    [data-testid="metric-container"] > div > div[data-testid="metric-value"] {
-        font-size: 0.85rem !important;
-        font-weight: 700;
-        line-height: 1.1;
+    /* Value styling - much smaller numbers */
+    [data-testid="metric-container"] [data-testid="metric-value"] {
+        font-size: 0.75rem !important;
+        font-weight: 700 !important;
+        line-height: 1.1 !important;
     }
     
     /* Delta styling */
-    [data-testid="metric-container"] > div > div:last-child {
-        font-size: 0.6rem !important;
+    [data-testid="metric-container"] [data-testid="metric-delta"] {
+        font-size: 0.55rem !important;
     }
     
-    /* Income card - Green */
-    [data-testid="metric-container"]:has([data-testid="metric-value"]:first-of-type) {
-        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-        border-color: #28a745;
-    }
-    
-    /* Color specific metric cards */
-    .metric-income {
+    /* Color coding by position - Income (first metric) */
+    [data-testid="metric-container"]:nth-of-type(1) {
         background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%) !important;
         border-color: #28a745 !important;
     }
     
-    .metric-expense {
+    /* Expense (second metric) */
+    [data-testid="metric-container"]:nth-of-type(2) {
         background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%) !important;
         border-color: #dc3545 !important;
     }
     
-    .metric-investment {
+    /* Investment (third metric) */
+    [data-testid="metric-container"]:nth-of-type(3) {
         background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%) !important;
         border-color: #17a2b8 !important;
     }
     
-    .metric-balance {
+    /* Balance (fourth metric) */
+    [data-testid="metric-container"]:nth-of-type(4) {
         background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%) !important;
         border-color: #ffc107 !important;
     }
@@ -179,54 +176,38 @@ if not df.empty:
 
     st.markdown(f"<div style='text-align: center; font-size: 0.9rem; margin: 0.5rem 0;'>📅 {selected_month_name} {selected_year}</div>", unsafe_allow_html=True)
 
-    # True 2x2 grid layout for metrics with colors
+    # True 2x2 grid layout for metrics
     row1_col1, row1_col2 = st.columns(2)
     row2_col1, row2_col2 = st.columns(2)
     
     with row1_col1:
-        st.markdown('<div class="metric-income">', unsafe_allow_html=True)
         st.metric("💰 Income", f"₹{income:,.0f}")
-        st.markdown('</div>', unsafe_allow_html=True)
         
     with row1_col2:
-        st.markdown('<div class="metric-expense">', unsafe_allow_html=True)
         st.metric("💸 Expense", f"₹{expense:,.0f}")
-        st.markdown('</div>', unsafe_allow_html=True)
         
     with row2_col1:
-        st.markdown('<div class="metric-investment">', unsafe_allow_html=True)
         st.metric("📈 Investment", f"₹{invest:,.0f}")
-        st.markdown('</div>', unsafe_allow_html=True)
         
     with row2_col2:
-        st.markdown('<div class="metric-balance">', unsafe_allow_html=True)
         st.metric("💵 Balance", f"₹{savings:,.0f}", delta_color="inverse" if savings < 0 else "normal")
-        st.markdown('</div>', unsafe_allow_html=True)
 
 else:
-    # Empty state with 2x2 grid and colors
+    # Empty state with 2x2 grid
     row1_col1, row1_col2 = st.columns(2)
     row2_col1, row2_col2 = st.columns(2)
     
     with row1_col1:
-        st.markdown('<div class="metric-income">', unsafe_allow_html=True)
         st.metric("💰 Income", "₹0")
-        st.markdown('</div>', unsafe_allow_html=True)
         
     with row1_col2:
-        st.markdown('<div class="metric-expense">', unsafe_allow_html=True)
         st.metric("💸 Expense", "₹0")
-        st.markdown('</div>', unsafe_allow_html=True)
         
     with row2_col1:
-        st.markdown('<div class="metric-investment">', unsafe_allow_html=True)
         st.metric("📈 Investment", "₹0")
-        st.markdown('</div>', unsafe_allow_html=True)
         
     with row2_col2:
-        st.markdown('<div class="metric-balance">', unsafe_allow_html=True)
         st.metric("💵 Balance", "₹0")
-        st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("---")
 
