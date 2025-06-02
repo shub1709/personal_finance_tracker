@@ -1,7 +1,7 @@
 import streamlit as st
 import gspread
 import pandas as pd
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
 from datetime import datetime
 import plotly.express as px
 import plotly.graph_objects as go
@@ -97,14 +97,29 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Connect to Google Sheets
+# Connect to Google Sheets with proper error handling
 @st.cache_resource
 def get_gsheet_connection():
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds_dict = st.secrets["gcp_service_account"]
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-    client = gspread.authorize(creds)
-    return client
+    try:
+        # Define the scope for Google Sheets and Google Drive API
+        scope = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+        
+        # Get credentials from Streamlit secrets
+        creds_dict = st.secrets["gcp_service_account"]
+        
+        # Create credentials object
+        creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+        
+        # Authorize the client
+        client = gspread.authorize(creds)
+        
+        return client
+    except Exception as e:
+        st.error(f"Error connecting to Google Sheets: {str(e)}")
+        return None
 
 # Subcategories
 SUBCATEGORIES = {
@@ -123,24 +138,41 @@ def create_custom_metric_card(label, value, metric_type):
     </div>
     """
 
-# Load data with caching
+# Load data with caching and error handling
 @st.cache_data(ttl=60)  # Cache for 1 minute
 def load_data():
-    client = get_gsheet_connection()
-    sheet = client.open("MyFinanceTracker")
-    ws = sheet.worksheet("Tracker")
-    data = ws.get_all_records()
-    df = pd.DataFrame(data)
-    if not df.empty:
-        df["Date"] = pd.to_datetime(df["Date"])
-        # Add row index for getting last 5 entries
-        df = df.reset_index(drop=True)
-    return df, ws
-
-st.title("💸 Finance Tracker")
-
-# Load data
-df, ws = load_data()
+    try:
+        client = get_gsheet_connection()
+        if client is None:
+            return pd.DataFrame(), None
+            
+        # Try to open the spreadsheet
+        sheet = client.open("MyFinanceTracker")
+        ws = sheet.worksheet("Tracker")
+        
+        # Get all records
+        data = ws.get_all_records()
+        df = pd.DataFrame(data)
+        
+        if not df.empty:
+            # Convert Date column to datetime
+            df["Date"] = pd.to_datetime(df["Date"], errors='coerce')
+            # Remove any rows with invalid dates
+            df = df.dropna(subset=['Date'])
+            # Reset index
+            df = df.reset_index(drop=True)
+            
+        return df, ws
+        
+    except gspread.SpreadsheetNotFound:
+        st.error("❌ Spreadsheet 'MyFinanceTracker' not found. Please check the name and sharing permissions.")
+        return pd.DataFrame(), None
+    except gspread.WorksheetNotFound:
+        st.error("❌ Worksheet 'Tracker' not found. Please check the worksheet name.")
+        return pd.DataFrame(), None
+    except Exception as e:
+        st.error(f"❌ Error loading data: {str(e)}")
+        return pd.DataFrame(), None
 
 # Helper function to format numbers with K/M abbreviations
 def format_amount(value):
@@ -152,6 +184,25 @@ def format_amount(value):
         return f"₹{value/1000:.1f}K"
     else:
         return f"₹{value:.0f}"
+
+# Function to add transaction with error handling
+def add_transaction(ws, date, category, subcategory, description, amount):
+    try:
+        new_row = [str(date), category, subcategory, description, amount]
+        ws.append_row(new_row)
+        return True, "Transaction added successfully!"
+    except Exception as e:
+        return False, f"Error adding transaction: {str(e)}"
+
+st.title("💸 Finance Tracker")
+
+# Load data
+df, ws = load_data()
+
+# Check if we have a valid worksheet connection
+if ws is None:
+    st.error("❌ Could not connect to Google Sheets. Please check your credentials and sheet permissions.")
+    st.stop()
 
 # Initialize session state for form reset
 if 'form_key' not in st.session_state:
@@ -196,20 +247,23 @@ with tab1:
     # Submit button outside form for immediate response
     if st.button("💾 Add Transaction", use_container_width=True):
         if amount > 0:
-            new_row = [str(date), category, subcategory, description, amount]
-            ws.append_row(new_row)
+            # Add transaction with error handling
+            success, message = add_transaction(ws, date, category, subcategory, description, amount)
             
-            # Clear cache to refresh data
-            st.cache_data.clear()
-            
-            # Increment form key to reset form
-            st.session_state.form_key += 1
-            
-            st.success("✅ Transaction added successfully!")
-            st.balloons()
-            
-            # Auto-refresh the page after successful entry
-            st.rerun()
+            if success:
+                # Clear cache to refresh data
+                st.cache_data.clear()
+                
+                # Increment form key to reset form
+                st.session_state.form_key += 1
+                
+                st.success("✅ " + message)
+                st.balloons()
+                
+                # Auto-refresh the page after successful entry
+                st.rerun()
+            else:
+                st.error("❌ " + message)
         else:
             st.error("Please enter a valid amount greater than 0")
     
@@ -298,14 +352,12 @@ with tab2:
                 {create_custom_metric_card("💸 Expense", f"₹{total_expense:,.0f}", "expense")}
                 {create_custom_metric_card("📈 Investment", f"₹{total_investment:,.0f}", "investment")}
                 {create_custom_metric_card("💵 Balance", f"₹{net_savings:,.0f}", "balance")}
-            
+            </div>
             """
             st.markdown(grid_html, unsafe_allow_html=True)
         else:
             st.warning("Please select at least one month to view summary")
             selected_period_df = pd.DataFrame()  # Empty dataframe for charts section
-        
-
         
         # -------------------------
         # Charts Section (Bar charts for all categories)
@@ -344,7 +396,6 @@ with tab2:
                 else:
                     st.info("No expense data for selected period")
 
-
             with chart_tab2:
                 income_df = selected_period_df[selected_period_df["Category"] == "Income"]
                 if not income_df.empty:
@@ -372,8 +423,6 @@ with tab2:
                         st.write(f"**{row['Subcategory']}**: ₹{row['Amount (₹)']:,.0f}")
                 else:
                     st.info("No income data for selected period")
-            
-
             
             with chart_tab3:
                 investment_df = selected_period_df[selected_period_df["Category"] == "Investment"]
