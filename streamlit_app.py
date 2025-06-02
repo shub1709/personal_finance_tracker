@@ -13,11 +13,11 @@ st.set_page_config(page_title="💰 Finance Tracker", layout="centered", initial
 # HIDE STREAMLIT DEFAULT MENU AND FOOTER
 hide_streamlit_style = """
             <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            button[kind="icon"] {
-                        display: none !important;
-        }
+                #MainMenu { visibility: hidden; }
+                footer { visibility: hidden; }
+                button[kind="icon"] {
+                    display: none !important;
+                }
             </style>
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
