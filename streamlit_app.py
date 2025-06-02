@@ -27,7 +27,7 @@ hide_streamlit_style = """
                 /* Center the title and reduce spacing */
                 h1 {
                     text-align: center !important;
-                    margin-top: 0.2rem !important;
+                    margin-top: 0.0rem !important;
                     margin-bottom: 0.8rem !important;
                     font-size: 1.6rem !important;
                 }
