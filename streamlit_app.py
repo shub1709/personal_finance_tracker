@@ -10,6 +10,42 @@ from google.oauth2.service_account import Credentials
 # MUST BE FIRST - Set page config
 st.set_page_config(page_title="💰 Finance Tracker", layout="centered", initial_sidebar_state="collapsed")
 
+st.markdown("""
+<style>
+/* Hide Streamlit UI elements */
+#MainMenu, footer, header, [data-testid="stToolbarActions"] {
+    visibility: hidden !important;
+    height: 0px !important;
+}
+
+/* REMOVE ALL TOP SPACING */
+section.main > div { 
+    padding-top: 0rem !important;
+}
+.block-container {
+    padding-top: 0rem !important;
+    padding-bottom: 1rem !important;
+}
+
+/* Tighten the h1 title itself */
+h1 {
+    text-align: center !important;
+    margin-top: 0rem !important;
+    margin-bottom: 0.8rem !important;
+    font-size: 1.6rem !important;
+}
+
+/* Optional: control mobile view */
+@media (max-width: 768px) {
+    .block-container {
+        padding-left: 0.25rem !important;
+        padding-right: 0.25rem !important;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
+
+
 # Unified CSS: Hide UI, center title, reduce top spacing, and mobile tweaks
 custom_css = """
 <style>
