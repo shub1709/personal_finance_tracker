@@ -10,6 +10,16 @@ from google.oauth2.service_account import Credentials
 # MUST BE FIRST - Set page config
 st.set_page_config(page_title="💰 Finance Tracker", layout="centered", initial_sidebar_state="collapsed")
 
+# HIDE STREAMLIT DEFAULT MENU AND FOOTER
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+
 # Mobile-optimized CSS with reduced font sizes
 st.markdown("""
 <style>    
