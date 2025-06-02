@@ -354,27 +354,28 @@ with tab1:
     st.header("📝 Add New Transaction")
     
     # Form inputs OUTSIDE the form to enable dynamic updates
+# Form inputs OUTSIDE the form to enable dynamic updates
     col1, col2 = st.columns(2)
-    date = col1.date_input("Date", datetime.today())
-    
+    date = col1.date_input("Date", datetime.today(), key=f"date_{st.session_state.form_key}")
+
     # Category selection with callback to update subcategories
     category = col2.selectbox(
         "Category", 
         ["Expense", "Income", "Investment", "Other"],
         index=["Expense", "Income", "Investment", "Other"].index(st.session_state.form_category),
-        key="category_select"
+        key=f"category_select_{st.session_state.form_key}"
     )
-    
+
     # Update session state when category changes
     if category != st.session_state.form_category:
         st.session_state.form_category = category
-    
+
     # Dynamic subcategory based on selected category
     subcategory_options = SUBCATEGORIES.get(category, [])
-    subcategory = st.selectbox("Subcategory", subcategory_options)
-    
-    description = st.text_input("Description", placeholder="Enter transaction description")
-    amount = st.number_input("Amount (₹)", min_value=0.0, format="%.2f", step=1.0)
+    subcategory = st.selectbox("Subcategory", subcategory_options, key=f"subcategory_{st.session_state.form_key}")
+
+    description = st.text_input("Description", placeholder="Enter transaction description", key=f"description_{st.session_state.form_key}")
+    amount = st.number_input("Amount (₹)", min_value=0.0, format="%.2f", step=1.0, key=f"amount_{st.session_state.form_key}")
     
     # Add validation display
     if DEBUG_MODE:
@@ -413,11 +414,17 @@ with tab1:
                 # Clear the data cache to refresh data
                 load_data_cached.clear()
                 
-                # Increment form key to reset form
-                st.session_state.form_key += 1
-                
-                st.success("✅ " + message)
+                # Show success message and balloons BEFORE rerun
+                st.success("✅ Transaction successfully recorded!")
                 st.balloons()
+                
+                # Small delay to show the message
+                import time
+                time.sleep(1)
+                
+                # Reset form state
+                st.session_state.form_key += 1
+                st.session_state.form_category = "Expense"  # Reset to default
                 
                 # Auto-refresh the page after successful entry
                 st.rerun()
