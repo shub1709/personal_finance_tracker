@@ -448,7 +448,7 @@ with tab1:
         
         for _, row in recent_df.iterrows():
             date_str = row["Date"].strftime("%d %b")
-            category_color = {"Income": "#28a745", "Expense": "#dc3545", "Investment": "#e4ff00", "Other": "#6c757d"}
+            category_color = {"Income": "#28a745", "Expense": "#dc3545", "Investment": "#c8b002", "Other": "#6c757d"}
             color = category_color.get(row["Category"], "#6c757d")
             
             st.markdown(f"""
