@@ -13,11 +13,16 @@ st.set_page_config(page_title="💰 Finance Tracker", layout="centered", initial
 # HIDE STREAMLIT DEFAULT MENU AND FOOTER
 hide_streamlit_style = """
             <style>
-                #MainMenu { visibility: hidden; }
-                footer { visibility: hidden; }
-                button[kind="icon"] {
+                #MainMenu {visibility: hidden;}
+                footer {visibility: hidden;}
+            
+                /* Hide the "Manage app" button in the toolbar */
+                [data-testid="stToolbarActions"] {
                     display: none !important;
                 }
+            
+                /* Optional: hide the entire toolbar */
+                header {visibility: hidden;}
             </style>
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
