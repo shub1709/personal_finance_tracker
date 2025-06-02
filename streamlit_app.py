@@ -10,47 +10,39 @@ from google.oauth2.service_account import Credentials
 # MUST BE FIRST - Set page config
 st.set_page_config(page_title="💰 Finance Tracker", layout="centered", initial_sidebar_state="collapsed")
 
-# HIDE STREAMLIT DEFAULT MENU AND FOOTER
-hide_streamlit_style = """
-            <style>
-                #MainMenu {visibility: hidden;}
-                footer {visibility: hidden;}
-            
-                /* Hide the "Manage app" button in the toolbar */
-                [data-testid="stToolbarActions"] {
-                    display: none !important;
-                }
-            
-                /* Optional: hide the entire toolbar */
-                header {visibility: hidden;}
+# Unified CSS: Hide UI, center title, reduce top spacing, and mobile tweaks
+custom_css = """
+<style>
+    /* Hide Streamlit UI elements */
+    #MainMenu { visibility: hidden; }
+    footer { visibility: hidden; }
+    [data-testid="stToolbarActions"] { display: none !important; }
+    header { visibility: hidden; }
 
-                /* Center the title and reduce spacing */
-                h1 {
-                    text-align: center !important;
-                    margin-top: 0.0rem !important;
-                    margin-bottom: 0.8rem !important;
-                    font-size: 1.6rem !important;
-                }
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
-
-# Mobile-optimized CSS with reduced font sizes
-st.markdown("""
-<style>    
+    /* Reduce top padding globally */
     .main .block-container {
-        padding: 1rem 0.5rem;
+        padding-top: 0.5rem !important;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
         max-width: 100%;
     }
-    
+
+    /* Center and shrink h1 title */
+    h1 {
+        text-align: center !important;
+        margin-top: 0rem !important;
+        margin-bottom: 0.8rem !important;
+        font-size: 1.6rem !important;
+    }
+
+    /* Custom grid layout for metrics */
     .custom-grid {
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
         gap: 0.5rem !important;
         margin: 1rem 0 !important;
     }
-    
+
     .custom-metric {
         background: linear-gradient(135deg, #ffffff, #f8f9fa);
         border: 2px solid #e0e0e0;
@@ -63,25 +55,25 @@ st.markdown("""
         flex-direction: column;
         justify-content: center;
     }
-    
+
     .custom-metric .metric-label {
         font-size: 0.8rem;
         font-weight: 600;
         margin-bottom: 0.3rem;
         color: #6c757d;
     }
-    
+
     .custom-metric .metric-value {
         font-size: 1.1rem;
         font-weight: 700;
         color: #333;
     }
-    
+
     .metric-income { background: linear-gradient(135deg, #d4edda, #a8e6a3) !important; }
     .metric-expense { background: linear-gradient(135deg, #f8d7da, #e57366) !important; }
     .metric-investment { background: linear-gradient(135deg, #fff3cd, #ffeaa7) !important; }
     .metric-balance { background: linear-gradient(135deg, #d1ecf1, #a3d5db) !important; }
-    
+
     .recent-entry {
         background: #f8f9fa;
         border: 1px solid #dee2e6;
@@ -90,39 +82,40 @@ st.markdown("""
         margin: 0.25rem 0;
         font-size: 0.85rem;
     }
-    
+
     .entry-date { font-weight: 600; color: #495057; }
     .entry-category { font-weight: 500; }
     .entry-amount { font-weight: 700; float: right; }
-    
+
+    /* Responsive adjustments */
     @media (max-width: 768px) {
-        .main .block-container { padding: 0.5rem 0.25rem; }
+        .main .block-container { padding: 0.5rem 0.25rem !important; }
         .custom-grid { gap: 0.25rem !important; }
         .custom-metric { padding: 0.6rem; min-height: 70px; }
         .custom-metric .metric-value { font-size: 1rem; }
     }
-    
-    /* Reduced font sizes for headings */
-    h1 { font-size: 1.5rem !important; margin: 0.4rem 0 !important; }
+
+    /* Font sizes for headings */
     h2 { font-size: 1.2rem !important; margin: 0.3rem 0 !important; }
     h3 { font-size: 1.0rem !important; margin: 0.25rem 0 !important; }
-    
-    /* Reduced label font sizes */
+
+    /* Input label font sizes */
     .stSelectbox label, .stDateInput label, .stTextInput label, .stNumberInput label {
         font-size: 1.0rem !important;
     }
-    
+
     /* Tab font sizes */
     .stTabs [data-baseweb="tab"] {
         font-size: 0.9rem !important;
     }
-    
-    /* Form button */
+
+    /* Button styling */
     .stButton button {
         font-size: 0.85rem !important;
     }
 </style>
-""", unsafe_allow_html=True)
+"""
+st.markdown(custom_css, unsafe_allow_html=True)
 
 # Debug mode toggle
 DEBUG_MODE = False
