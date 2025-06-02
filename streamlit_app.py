@@ -1,7 +1,6 @@
 import streamlit as st
 import gspread
 import pandas as pd
-from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 import plotly.express as px
 import plotly.graph_objects as go
@@ -78,18 +77,18 @@ st.markdown("""
     }
     
     /* Reduced font sizes for headings */
-    h1 { font-size: 1.1rem !important; margin: 0.4rem 0 !important; }
-    h2 { font-size: 0.95rem !important; margin: 0.3rem 0 !important; }
-    h3 { font-size: 0.85rem !important; margin: 0.25rem 0 !important; }
+    h1 { font-size: 1.5rem !important; margin: 0.4rem 0 !important; }
+    h2 { font-size: 1.2rem !important; margin: 0.3rem 0 !important; }
+    h3 { font-size: 1.0rem !important; margin: 0.25rem 0 !important; }
     
     /* Reduced label font sizes */
     .stSelectbox label, .stDateInput label, .stTextInput label, .stNumberInput label {
-        font-size: 0.8rem !important;
+        font-size: 1.0rem !important;
     }
     
     /* Tab font sizes */
     .stTabs [data-baseweb="tab"] {
-        font-size: 0.85rem !important;
+        font-size: 0.3rem !important;
     }
     
     /* Form button */
@@ -99,8 +98,15 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Connect to Google Sheets with proper error handling
-@st.cache_resource
+# Debug mode toggle
+DEBUG_MODE = False
+
+# Initialize session state for cache invalidation
+if 'last_transaction_time' not in st.session_state:
+    st.session_state.last_transaction_time = None
+
+# Connect to Google Sheets with proper error handling and caching
+@st.cache_resource(ttl=3600)  # Cache for 1 hour
 def get_gsheet_connection():
     try:
         # Define the required scope
@@ -111,15 +117,33 @@ def get_gsheet_connection():
 
         # Get credentials from secrets
         creds_dict = st.secrets["gcp_service_account"]
+        
+        if DEBUG_MODE:
+            st.write("🔍 Debug: Credentials loaded from secrets")
 
-        # Create Credentials object using google-auth
-        creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+        # Create Credentials object using google-auth (compatible method)
+        creds = Credentials.from_service_account_info(
+            creds_dict, 
+            scopes=scope
+        )
 
-        # Authorize the gspread client
-        client = gspread.authorize(creds)
-        return client
+        # Use gc (gspread client) with proper authorization
+        gc = gspread.authorize(creds)
+        
+        if DEBUG_MODE:
+            st.write("🔍 Debug: Google Sheets client authorized successfully")
+            
+        return gc
+        
+    except KeyError as e:
+        st.error(f"❌ Missing secret key: {str(e)}. Please check your secrets configuration.")
+        if DEBUG_MODE:
+            st.write("🔍 Debug: Available secrets:", list(st.secrets.keys()))
+        return None
     except Exception as e:
-        st.error(f"Error connecting to Google Sheets: {str(e)}")
+        st.error(f"❌ Error connecting to Google Sheets: {str(e)}")
+        if DEBUG_MODE:
+            st.write(f"🔍 Debug: Full error: {type(e).__name__}: {str(e)}")
         return None
 
 # Subcategories
@@ -139,21 +163,50 @@ def create_custom_metric_card(label, value, metric_type):
     </div>
     """
 
-# Load data with caching and error handling
-@st.cache_data(ttl=60)  # Cache for 1 minute
-def load_data():
+# Get fresh worksheet connection (not cached to avoid auth issues)
+def get_worksheet():
+    """Get a fresh worksheet connection every time"""
     try:
         client = get_gsheet_connection()
         if client is None:
-            return pd.DataFrame(), None
+            return None
             
         # Try to open the spreadsheet
         sheet = client.open("MyFinanceTracker")
         ws = sheet.worksheet("Tracker")
         
+        if DEBUG_MODE:
+            st.write("🔍 Debug: Successfully connected to spreadsheet and worksheet")
+        
+        return ws
+        
+    except gspread.SpreadsheetNotFound:
+        st.error("❌ Spreadsheet 'MyFinanceTracker' not found. Please check the name and sharing permissions.")
+        return None
+    except gspread.WorksheetNotFound:
+        st.error("❌ Worksheet 'Tracker' not found. Please check the worksheet name.")
+        return None
+    except Exception as e:
+        st.error(f"❌ Error accessing worksheet: {str(e)}")
+        if DEBUG_MODE:
+            st.write(f"🔍 Debug: Full worksheet error: {type(e).__name__}: {str(e)}")
+        return None
+
+# Load data with smart caching that respects transaction additions
+@st.cache_data(ttl=300)  # Cache for 5 minutes
+def load_data_cached(cache_buster=None):
+    """Load data with cache busting parameter"""
+    try:
+        ws = get_worksheet()
+        if ws is None:
+            return pd.DataFrame()
+            
         # Get all records
         data = ws.get_all_records()
         df = pd.DataFrame(data)
+        
+        if DEBUG_MODE:
+            st.write(f"🔍 Debug: Loaded {len(df)} records from sheet")
         
         if not df.empty:
             # Convert Date column to datetime
@@ -163,17 +216,18 @@ def load_data():
             # Reset index
             df = df.reset_index(drop=True)
             
-        return df, ws
+        return df
         
-    except gspread.SpreadsheetNotFound:
-        st.error("❌ Spreadsheet 'MyFinanceTracker' not found. Please check the name and sharing permissions.")
-        return pd.DataFrame(), None
-    except gspread.WorksheetNotFound:
-        st.error("❌ Worksheet 'Tracker' not found. Please check the worksheet name.")
-        return pd.DataFrame(), None
     except Exception as e:
         st.error(f"❌ Error loading data: {str(e)}")
-        return pd.DataFrame(), None
+        if DEBUG_MODE:
+            st.write(f"🔍 Debug: Full load error: {type(e).__name__}: {str(e)}")
+        return pd.DataFrame()
+
+def load_data():
+    """Load data with cache busting when new transactions are added"""
+    cache_buster = st.session_state.last_transaction_time
+    return load_data_cached(cache_buster)
 
 # Helper function to format numbers with K/M abbreviations
 def format_amount(value):
@@ -186,26 +240,101 @@ def format_amount(value):
     else:
         return f"₹{value:.0f}"
 
-# Function to add transaction with error handling
-def add_transaction(ws, date, category, subcategory, description, amount):
+# Function to add transaction with fresh connection
+def add_transaction(date, category, subcategory, description, amount):
     try:
-        new_row = [str(date), category, subcategory, description, float(amount)]
-        result = ws.append_row(new_row, value_input_option='USER_ENTERED')
-        return True, "Transaction added successfully!"
+        if DEBUG_MODE:
+            st.write(f"🔍 Debug: Attempting to add transaction - Date: {date}, Category: {category}, Amount: {amount}")
+        
+        # Get a fresh worksheet connection for write operations
+        ws = get_worksheet()
+        if ws is None:
+            return False, "Could not connect to worksheet"
+        
+        # Convert date to string format
+        date_str = date.strftime("%Y-%m-%d") if hasattr(date, 'strftime') else str(date)
+        
+        # Prepare the row data
+        new_row = [date_str, category, subcategory, description, float(amount)]
+        
+        if DEBUG_MODE:
+            st.write(f"🔍 Debug: Row data prepared: {new_row}")
+        
+        # Try to add the row to the sheet with retry logic
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                if DEBUG_MODE:
+                    st.write(f"🔍 Debug: Attempt {attempt + 1} to add row...")
+                
+                result = ws.append_row(new_row, value_input_option='USER_ENTERED')
+                
+                if DEBUG_MODE:
+                    st.write(f"🔍 Debug: Sheet response: {result}")
+                
+                # Update cache buster to force data reload
+                st.session_state.last_transaction_time = datetime.now().isoformat()
+                
+                return True, "Transaction added successfully!"
+                
+            except Exception as retry_error:
+                if DEBUG_MODE:
+                    st.write(f"🔍 Debug: Attempt {attempt + 1} failed: {str(retry_error)}")
+                
+                if attempt == max_retries - 1:
+                    # Last attempt failed, raise the error
+                    raise retry_error
+                
+                # Wait a bit before retrying
+                import time
+                time.sleep(1)
+        
     except gspread.exceptions.APIError as e:
-        return False, f"Google Sheets API Error: {str(e)}"
+        error_msg = f"Google Sheets API Error: {str(e)}"
+        if DEBUG_MODE:
+            st.write(f"🔍 Debug API Error: {error_msg}")
+        return False, error_msg
+    except ValueError as e:
+        error_msg = f"Value Error (check amount format): {str(e)}"
+        if DEBUG_MODE:
+            st.write(f"🔍 Debug Value Error: {error_msg}")
+        return False, error_msg
     except Exception as e:
-        return False, f"Error adding transaction: {str(e)}"
+        error_msg = f"Unexpected error: {str(e)}"
+        if DEBUG_MODE:
+            st.write(f"🔍 Debug Unexpected Error: {type(e).__name__}: {error_msg}")
+        return False, error_msg
+
+# Add debug information at the top
+if DEBUG_MODE:
+    st.sidebar.header("🔧 Debug Information")
+    
+    # Check secrets
+    try:
+        secrets_available = "gcp_service_account" in st.secrets
+        st.sidebar.write(f"Secrets available: {secrets_available}")
+        if secrets_available:
+            creds_keys = list(st.secrets["gcp_service_account"].keys())
+            st.sidebar.write(f"Credential keys: {creds_keys}")
+    except Exception as e:
+        st.sidebar.write(f"Error checking secrets: {e}")
+    
+    # Show cache info
+    st.sidebar.write(f"Last transaction: {st.session_state.last_transaction_time}")
 
 st.title("💸 Finance Tracker")
 
 # Load data
-df, ws = load_data()
+df = load_data()
 
-# Check if we have a valid worksheet connection
-if ws is None:
-    st.error("❌ Could not connect to Google Sheets. Please check your credentials and sheet permissions.")
-    st.stop()
+# Check if we have any data or connection issues
+if df.empty:
+    # Try to get worksheet to check connection
+    test_ws = get_worksheet()
+    if test_ws is None:
+        st.error("❌ Could not connect to Google Sheets. Please check your credentials and sheet permissions.")
+        st.info("💡 Common issues:\n- Check if 'MyFinanceTracker' spreadsheet exists\n- Verify the service account has edit permissions\n- Ensure 'Tracker' worksheet exists\n- Check your secrets configuration")
+        st.stop()
 
 # Initialize session state for form reset
 if 'form_key' not in st.session_state:
@@ -244,18 +373,45 @@ with tab1:
     subcategory_options = SUBCATEGORIES.get(category, [])
     subcategory = st.selectbox("Subcategory", subcategory_options)
     
-    description = st.text_input("Description")
-    amount = st.number_input("Amount (₹)", min_value=0.0, format="%.0f")
+    description = st.text_input("Description", placeholder="Enter transaction description")
+    amount = st.number_input("Amount (₹)", min_value=0.0, format="%.2f", step=1.0)
+    
+    # Add validation display
+    if DEBUG_MODE:
+        st.write("🔍 **Current Form Values:**")
+        st.write(f"- Date: {date}")
+        st.write(f"- Category: {category}")
+        st.write(f"- Subcategory: {subcategory}")
+        st.write(f"- Description: '{description}'")
+        st.write(f"- Amount: {amount}")
     
     # Submit button outside form for immediate response
     if st.button("💾 Add Transaction", use_container_width=True):
-        if amount > 0:
+        # Enhanced validation
+        errors = []
+        
+        if amount <= 0:
+            errors.append("Amount must be greater than 0")
+        
+        if not description.strip():
+            errors.append("Description cannot be empty")
+            
+        if not subcategory:
+            errors.append("Please select a subcategory")
+        
+        if errors:
+            for error in errors:
+                st.error(f"❌ {error}")
+        else:
+            if DEBUG_MODE:
+                st.write("🔍 Debug: All validations passed, attempting to add transaction...")
+            
             # Add transaction with error handling
-            success, message = add_transaction(ws, date, category, subcategory, description, amount)
+            success, message = add_transaction(date, category, subcategory, description.strip(), amount)
             
             if success:
-                # Clear cache to refresh data
-                st.cache_data.clear()
+                # Clear the data cache to refresh data
+                load_data_cached.clear()
                 
                 # Increment form key to reset form
                 st.session_state.form_key += 1
@@ -267,8 +423,13 @@ with tab1:
                 st.rerun()
             else:
                 st.error("❌ " + message)
-        else:
-            st.error("Please enter a valid amount greater than 0")
+                
+                # Additional troubleshooting info
+                st.info("💡 **Troubleshooting Tips:**\n"
+                       "- Check if the Google Sheet is accessible\n"
+                       "- Verify the service account has edit permissions\n"
+                       "- Try refreshing the page\n"
+                       "- Check your internet connection")
     
     # Show recent transactions in the add transaction tab for reference
     if not df.empty:
@@ -362,7 +523,7 @@ with tab2:
             selected_period_df = pd.DataFrame()  # Empty dataframe for charts section
         
         # -------------------------
-        # Charts Section (Bar charts for all categories)
+        # Charts Section (Static Bar charts for all categories)
         # -------------------------
         if selected_months and not selected_period_df.empty:
             st.header("📈 Analytics")
@@ -384,12 +545,21 @@ with tab2:
                                    y="Amount (₹)",
                                    title="Expense Breakdown",
                                    text="Amount_Label")
-                    fig_exp.update_layout(height=400, xaxis_tickangle=-45, showlegend=False)
+                    fig_exp.update_layout(
+                        height=400, 
+                        xaxis_tickangle=-45, 
+                        showlegend=False,
+                        # Static image configuration
+                        font=dict(size=12),
+                        title_font_size=16
+                    )
                     fig_exp.update_traces(textposition='outside', marker_color='#dc3545')
                     # Adjust y-axis to accommodate labels
                     max_value = expense_by_subcat['Amount (₹)'].max()
                     fig_exp.update_yaxes(range=[0, max_value * 1.15])
-                    st.plotly_chart(fig_exp, use_container_width=True)
+                    
+                    # Display as static image
+                    st.plotly_chart(fig_exp, use_container_width=True, config={'staticPlot': True})
                     
                     # Top expenses
                     st.subheader("🔝 Top Expenses")
@@ -412,12 +582,21 @@ with tab2:
                                    y="Amount (₹)",
                                    title="Income Breakdown",
                                    text="Amount_Label")
-                    fig_inc.update_layout(height=400, xaxis_tickangle=-45, showlegend=False)
+                    fig_inc.update_layout(
+                        height=400, 
+                        xaxis_tickangle=-45, 
+                        showlegend=False,
+                        # Static image configuration
+                        font=dict(size=12),
+                        title_font_size=16
+                    )
                     fig_inc.update_traces(textposition='outside', marker_color='#28a745')
                     # Adjust y-axis to accommodate labels
                     max_value = income_by_subcat['Amount (₹)'].max()
                     fig_inc.update_yaxes(range=[0, max_value * 1.15])
-                    st.plotly_chart(fig_inc, use_container_width=True)
+                    
+                    # Display as static image
+                    st.plotly_chart(fig_inc, use_container_width=True, config={'staticPlot': True})
                     
                     # Income summary
                     st.subheader("💰 Income Summary")
@@ -440,12 +619,21 @@ with tab2:
                                    y="Amount (₹)",
                                    title="Investment Breakdown",
                                    text="Amount_Label")
-                    fig_inv.update_layout(height=400, xaxis_tickangle=-45, showlegend=False)
+                    fig_inv.update_layout(
+                        height=400, 
+                        xaxis_tickangle=-45, 
+                        showlegend=False,
+                        # Static image configuration
+                        font=dict(size=12),
+                        title_font_size=16
+                    )
                     fig_inv.update_traces(textposition='outside', marker_color='#007bff')
                     # Adjust y-axis to accommodate labels
                     max_value = investment_by_subcat['Amount (₹)'].max()
                     fig_inv.update_yaxes(range=[0, max_value * 1.15])
-                    st.plotly_chart(fig_inv, use_container_width=True)
+                    
+                    # Display as static image
+                    st.plotly_chart(fig_inv, use_container_width=True, config={'staticPlot': True})
                     
                     # Investment summary
                     st.subheader("💼 Investment Summary")
@@ -466,3 +654,37 @@ with tab2:
         """
         st.markdown(grid_html, unsafe_allow_html=True)
         st.info("No transactions recorded yet. Add your first transaction in the 'Add Transaction' tab!")
+
+# Debug section at the bottom
+if DEBUG_MODE:
+    st.markdown("---")
+    st.subheader("🔧 Debug Panel")
+    
+    if st.button("🧪 Test Google Sheets Connection"):
+        ws = get_worksheet()
+        
+        if ws:
+            try:
+                headers = ws.row_values(1)
+                st.success(f"✅ Connection successful! Headers: {headers}")
+                
+                # Test write permissions by attempting to read last row
+                all_values = ws.get_all_values()
+                st.info(f"📊 Sheet has {len(all_values)} rows (including header)")
+                
+            except Exception as e:
+                st.error(f"❌ Connection test failed: {e}")
+        else:
+            st.error("❌ Connection failed")
+    
+    if st.button("🔄 Clear All Caches"):
+        st.cache_data.clear()
+        st.cache_resource.clear()
+        st.session_state.last_transaction_time = None
+        st.success("✅ All caches cleared!")
+        st.rerun()
+    
+    # Toggle debug mode
+    if st.button("🔍 Turn Off Debug Mode"):
+        DEBUG_MODE = False
+        st.rerun()
