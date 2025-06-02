@@ -52,7 +52,7 @@ st.markdown("""
     }
     
     .metric-income { background: linear-gradient(135deg, #d4edda, #a8e6a3) !important; }
-    .metric-expense { background: linear-gradient(135deg, #f8d7da, #f5b7b1) !important; }
+    .metric-expense { background: linear-gradient(135deg, #f8d7da, #e57366) !important; }
     .metric-investment { background: linear-gradient(135deg, #fff3cd, #ffeaa7) !important; }
     .metric-balance { background: linear-gradient(135deg, #d1ecf1, #a3d5db) !important; }
     
