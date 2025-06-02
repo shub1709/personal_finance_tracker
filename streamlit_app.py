@@ -558,12 +558,13 @@ with tab2:
                         showlegend=False,
                         # Static image configuration
                         font=dict(size=12),
-                        title_font_size=16
+                        title_font_size=16,
+                        yaxis_title=None
                     )
                     fig_exp.update_traces(textposition='outside', marker_color='#dc3545')
                     # Adjust y-axis to accommodate labels
                     max_value = expense_by_subcat['Amount (₹)'].max()
-                    fig_exp.update_yaxes(range=[0, max_value * 1.15])
+                    fig_exp.update_yaxes(range=[0, max_value * 1.2])
                     
                     # Display as static image
                     st.plotly_chart(fig_exp, use_container_width=True, config={'staticPlot': True})
@@ -595,12 +596,13 @@ with tab2:
                         showlegend=False,
                         # Static image configuration
                         font=dict(size=12),
-                        title_font_size=16
+                        title_font_size=16,
+                        yaxis_title=None
                     )
                     fig_inc.update_traces(textposition='outside', marker_color='#28a745')
                     # Adjust y-axis to accommodate labels
                     max_value = income_by_subcat['Amount (₹)'].max()
-                    fig_inc.update_yaxes(range=[0, max_value * 1.15])
+                    fig_inc.update_yaxes(range=[0, max_value * 1.2])
                     
                     # Display as static image
                     st.plotly_chart(fig_inc, use_container_width=True, config={'staticPlot': True})
@@ -632,12 +634,13 @@ with tab2:
                         showlegend=False,
                         # Static image configuration
                         font=dict(size=12),
-                        title_font_size=16
+                        title_font_size=16,
+                        yaxis_title=None
                     )
                     fig_inv.update_traces(textposition='outside', marker_color='#c8b002')
                     # Adjust y-axis to accommodate labels
                     max_value = investment_by_subcat['Amount (₹)'].max()
-                    fig_inv.update_yaxes(range=[0, max_value * 1.15])
+                    fig_inv.update_yaxes(range=[0, max_value * 1.2])
                     
                     # Display as static image
                     st.plotly_chart(fig_inv, use_container_width=True, config={'staticPlot': True})
