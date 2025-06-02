@@ -23,6 +23,14 @@ hide_streamlit_style = """
             
                 /* Optional: hide the entire toolbar */
                 header {visibility: hidden;}
+
+                /* Center the title and reduce spacing */
+                h1 {
+                    text-align: center !important;
+                    margin-top: 0.2rem !important;
+                    margin-bottom: 0.8rem !important;
+                    font-size: 1.6rem !important;
+                }
             </style>
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
