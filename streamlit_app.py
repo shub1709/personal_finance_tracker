@@ -3,136 +3,84 @@ import gspread
 import pandas as pd
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
+import plotly.express as px
+import plotly.graph_objects as go
 
-# MUST BE FIRST - Set page config before any other Streamlit commands
-st.set_page_config(page_title="💰 Personal Finance Tracker", layout="centered")
+# MUST BE FIRST - Set page config
+st.set_page_config(page_title="💰 Finance Tracker", layout="centered", initial_sidebar_state="collapsed")
 
-# Aggressive mobile-optimized CSS with multiple fallback strategies
+# Mobile-optimized CSS
 st.markdown("""
-<style>
-    /* Reset and base styles */
+<style>    
     .main .block-container {
-        padding-top: 1rem;
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
+        padding: 1rem 0.5rem;
         max-width: 100%;
     }
     
-    /* Custom grid container - override Streamlit's flex behavior */
     .custom-grid {
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
-        grid-template-rows: auto auto !important;
         gap: 0.5rem !important;
-        width: 100% !important;
         margin: 1rem 0 !important;
     }
     
-    .custom-grid > div {
-        width: 100% !important;
-        min-width: 0 !important;
-        flex: none !important;
-    }
-    
-    /* Force override Streamlit's column behavior */
-    .stHorizontal {
-        display: none !important;
-    }
-    
-    /* Hide default Streamlit columns when we use custom grid */
-    .custom-grid-active div[data-testid="column"] {
-        display: none !important;
-    }
-    
-    /* Style metric containers */
     .custom-metric {
         background: linear-gradient(135deg, #ffffff, #f8f9fa);
         border: 2px solid #e0e0e0;
-        padding: 1rem;
-        border-radius: 12px;
+        padding: 0.8rem;
+        border-radius: 10px;
         text-align: center;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        transition: transform 0.2s ease;
-        min-height: 100px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        min-height: 80px;
         display: flex;
         flex-direction: column;
         justify-content: center;
     }
     
-    .custom-metric:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-    }
-    
     .custom-metric .metric-label {
-        font-size: 0.9rem;
+        font-size: 0.8rem;
         font-weight: 600;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.3rem;
         color: #6c757d;
     }
     
     .custom-metric .metric-value {
-        font-size: 1.4rem;
+        font-size: 1.1rem;
         font-weight: 700;
         color: #333;
     }
     
-    /* Color coding for different metrics */
-    .metric-income {
-        background: linear-gradient(135deg, #d4edda, #33ff58) !important;
-        
+    .metric-income { background: linear-gradient(135deg, #d4edda, #a8e6a3) !important; }
+    .metric-expense { background: linear-gradient(135deg, #f8d7da, #f5b7b1) !important; }
+    .metric-investment { background: linear-gradient(135deg, #d1ecf1, #a3d5db) !important; }
+    .metric-balance { background: linear-gradient(135deg, #fff3cd, #ffeaa7) !important; }
+    
+    .recent-entry {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 0.5rem;
+        margin: 0.25rem 0;
+        font-size: 0.85rem;
     }
     
-    .metric-expense {
-        background: linear-gradient(135deg, #f8d7da, #fa3007) !important;
-        
-    }
+    .entry-date { font-weight: 600; color: #495057; }
+    .entry-category { font-weight: 500; }
+    .entry-amount { font-weight: 700; float: right; }
     
-    .metric-investment {
-        background: linear-gradient(135deg, #d1ecf1, #33c4ff) !important;
-        
-    }
-    
-    .metric-balance {
-        background: linear-gradient(135deg, #fff3cd, #ffe333) !important;
-        
-    }
-    
-    /* Mobile specific - even more aggressive */
     @media (max-width: 768px) {
-        .main .block-container {
-            padding-left: 0.25rem;
-            padding-right: 0.25rem;
-        }
-        
-        .custom-grid {
-            gap: 0.25rem !important;
-        }
-        
-        .custom-metric {
-            padding: 0.75rem;
-            min-height: 90px;
-        }
-        
-        .custom-metric .metric-value {
-            font-size: 1.2rem;
-        }
+        .main .block-container { padding: 0.5rem 0.25rem; }
+        .custom-grid { gap: 0.25rem !important; }
+        .custom-metric { padding: 0.6rem; min-height: 70px; }
+        .custom-metric .metric-value { font-size: 1rem; }
     }
     
-    /* Reduce header sizes */
-    h1 { font-size: 1.5rem; margin: 0.5rem 0; }
-    h2 { font-size: 1.25rem; margin: 0.5rem 0; }
-    h3 { font-size: 1.1rem; margin: 0.5rem 0; }
+    h1 { font-size: 1.4rem; margin: 0.5rem 0; }
+    h2 { font-size: 1.2rem; margin: 0.4rem 0; }
+    h3 { font-size: 1rem; margin: 0.3rem 0; }
     
-    /* Form styling */
     .stSelectbox label, .stDateInput label, .stTextInput label, .stNumberInput label {
-        font-size: 0.9rem;
-    }
-    
-    /* Hide any potential Streamlit column containers in grid section */
-    .grid-section .stHorizontal,
-    .grid-section div[data-testid="column"] {
-        display: none !important;
+        font-size: 0.85rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -146,55 +94,15 @@ def get_gsheet_connection():
     client = gspread.authorize(creds)
     return client
 
-# Define subcategories for each category
+# Subcategories
 SUBCATEGORIES = {
-    "Income": [
-        "Salary",
-        "Freelancing",
-        "Business Income",
-        "Rental Income",
-        "Interest/Dividends",
-        "Bonus",
-        "Gift/Inheritance",
-        "Other Income"
-    ],
-    "Expense": [
-        "Food & Dining",
-        "Groceries",
-        "Transportation",
-        "Utilities",
-        "Rent/EMI",
-        "Healthcare",
-        "Entertainment",
-        "Shopping",
-        "Education",
-        "Insurance",
-        "Travel",
-        "Personal Care",
-        "Other Expense"
-    ],
-    "Investment": [
-        "Mutual Funds",
-        "Stocks",
-        "Fixed Deposits",
-        "PPF",
-        "EPF",
-        "Gold",
-        "Real Estate",
-        "Crypto",
-        "Bonds",
-        "Other Investment"
-    ],
-    "Other": [
-        "Transfer",
-        "Loan Given",
-        "Loan Received",
-        "Tax Payment",
-        "Miscellaneous"
-    ]
+    "Income": ["Salary", "Freelancing", "Business Income", "Rental Income", "Interest/Dividends", "Bonus", "Gift", "Other Income"],
+    "Expense": ["Food & Dining", "Groceries", "Transportation", "Utilities", "Rent/EMI", "Healthcare", "Entertainment", "Shopping", "Education", "Insurance", "Travel", "Personal Care", "Other Expense"],
+    "Investment": ["Mutual Funds", "Stocks", "Fixed Deposits", "PPF", "EPF", "Gold", "Real Estate", "Crypto", "Bonds", "Other Investment"],
+    "Other": ["Transfer", "Loan Given", "Loan Received", "Tax Payment", "Miscellaneous"]
 }
 
-# Custom metric component function
+# Custom metric component
 def create_custom_metric_card(label, value, metric_type):
     return f"""
     <div class="custom-metric metric-{metric_type}">
@@ -203,62 +111,49 @@ def create_custom_metric_card(label, value, metric_type):
     </div>
     """
 
-# Load worksheet
-client = get_gsheet_connection()
-sheet = client.open("MyFinanceTracker")  # CHANGE to your Sheet name
-ws = sheet.worksheet("Tracker")          # Single tab name
+# Load data with caching
+@st.cache_data(ttl=60)  # Cache for 1 minute
+def load_data():
+    client = get_gsheet_connection()
+    sheet = client.open("MyFinanceTracker")
+    ws = sheet.worksheet("Tracker")
+    data = ws.get_all_records()
+    df = pd.DataFrame(data)
+    if not df.empty:
+        df["Date"] = pd.to_datetime(df["Date"])
+        df = df.sort_values("Date", ascending=False)  # Sort by date descending
+    return df, ws
 
-st.title("💸 Daily Tracker")
+# Initialize session state for form reset
+if 'form_key' not in st.session_state:
+    st.session_state.form_key = 0
+
+st.title("💸 Finance Tracker")
+
+# Load data
+df, ws = load_data()
 
 # -------------------------
 # Monthly Summary Cards
 # -------------------------
 st.header("📊 Monthly Summary")
 
-# Load data
-data = ws.get_all_records()
-df = pd.DataFrame(data)
-
 if not df.empty:
-    df["Date"] = pd.to_datetime(df["Date"])
+    # Current month data
+    current_month = datetime.now().month
+    current_year = datetime.now().year
+    current_month_df = df[(df["Date"].dt.month == current_month) & (df["Date"].dt.year == current_year)]
     
-    # Month and Year selection
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        available_years = sorted(df["Date"].dt.year.unique(), reverse=True)
-        default_year = datetime.now().year if datetime.now().year in available_years else available_years[-1]
-        selected_year = st.selectbox("Select Year", available_years, index=available_years.index(default_year))
-    
-    with col2:
-        # Get months available for the selected year
-        year_data = df[df["Date"].dt.year == selected_year]
-        available_months = sorted(year_data["Date"].dt.month.unique())
-        month_names = [datetime(2000, month, 1).strftime('%B') for month in available_months]
-        
-        # Set default to current month if available, otherwise first available month
-        current_month = datetime.now().month
-        if current_month in available_months and selected_year == datetime.now().year:
-            default_month_index = available_months.index(current_month)
-        else:
-            default_month_index = -1
-        
-        selected_month_name = st.selectbox("Select Month", month_names, index=default_month_index)
-        selected_month = datetime.strptime(selected_month_name, '%B').month
-    
-    # Filter for selected month and year
-    selected_month_df = df[(df["Date"].dt.month == selected_month) & (df["Date"].dt.year == selected_year)]
-    
-    # Calculate totals for selected month
-    total_income = selected_month_df[selected_month_df["Category"] == "Income"]["Amount (₹)"].sum()
-    total_expense = selected_month_df[selected_month_df["Category"] == "Expense"]["Amount (₹)"].sum()
-    total_investment = selected_month_df[selected_month_df["Category"] == "Investment"]["Amount (₹)"].sum()
+    # Calculate totals
+    total_income = current_month_df[current_month_df["Category"] == "Income"]["Amount (₹)"].sum()
+    total_expense = current_month_df[current_month_df["Category"] == "Expense"]["Amount (₹)"].sum()
+    total_investment = current_month_df[current_month_df["Category"] == "Investment"]["Amount (₹)"].sum()
     net_savings = total_income - total_expense - total_investment
     
-    # Display selected month/year
-    st.subheader(f"📅 {selected_month_name} {selected_year}")
+    # Display current month
+    st.subheader(f"📅 {datetime.now().strftime('%B %Y')}")
     
-    # Create custom 2x2 grid using HTML - completely bypass Streamlit columns
+    # Custom grid
     grid_html = f"""
     <div class="custom-grid">
         {create_custom_metric_card("💰 Income", f"₹{total_income:,.0f}", "income")}
@@ -267,13 +162,83 @@ if not df.empty:
         {create_custom_metric_card("💵 Balance", f"₹{net_savings:,.0f}", "balance")}
     </div>
     """
-    
     st.markdown(grid_html, unsafe_allow_html=True)
-        
-else:
-    # Show empty cards if no data
-    st.subheader(f"📅 {datetime.now().strftime('%B %Y')}")
     
+    # -------------------------
+    # Recent Transactions
+    # -------------------------
+    st.header("🕒 Last 5 Transactions")
+    
+    recent_df = df.head(5)
+    for _, row in recent_df.iterrows():
+        date_str = row["Date"].strftime("%d %b")
+        category_color = {"Income": "#28a745", "Expense": "#dc3545", "Investment": "#007bff", "Other": "#6c757d"}
+        color = category_color.get(row["Category"], "#6c757d")
+        
+        st.markdown(f"""
+        <div class="recent-entry">
+            <span class="entry-date">{date_str}</span> | 
+            <span class="entry-category" style="color: {color};">{row["Category"]}</span> - {row["Subcategory"]}
+            <span class="entry-amount" style="color: {color};">₹{row["Amount (₹)"]:,.0f}</span>
+            <br><small>{row["Description"]}</small>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # -------------------------
+    # Charts Section
+    # -------------------------
+    st.header("📈 Analytics")
+    
+    # Chart tabs
+    chart_tab1, chart_tab2 = st.tabs(["💸 Expenses", "📈 Investments"])
+    
+    with chart_tab1:
+        expense_df = current_month_df[current_month_df["Category"] == "Expense"]
+        if not expense_df.empty:
+            expense_by_subcat = expense_df.groupby("Subcategory")["Amount (₹)"].sum().reset_index()
+            expense_by_subcat = expense_by_subcat.sort_values("Amount (₹)", ascending=False)
+            
+            fig_exp = px.pie(expense_by_subcat, 
+                           values="Amount (₹)", 
+                           names="Subcategory",
+                           title="Expense Breakdown",
+                           color_discrete_sequence=px.colors.qualitative.Set3)
+            fig_exp.update_layout(height=400, showlegend=False)
+            fig_exp.update_traces(textposition='inside', textinfo='percent+label')
+            st.plotly_chart(fig_exp, use_container_width=True)
+            
+            # Top expenses
+            st.subheader("🔝 Top Expenses")
+            for _, row in expense_by_subcat.head(3).iterrows():
+                st.write(f"**{row['Subcategory']}**: ₹{row['Amount (₹)']:,.0f}")
+        else:
+            st.info("No expense data for current month")
+    
+    with chart_tab2:
+        investment_df = current_month_df[current_month_df["Category"] == "Investment"]
+        if not investment_df.empty:
+            investment_by_subcat = investment_df.groupby("Subcategory")["Amount (₹)"].sum().reset_index()
+            investment_by_subcat = investment_by_subcat.sort_values("Amount (₹)", ascending=False)
+            
+            fig_inv = px.bar(investment_by_subcat, 
+                           x="Subcategory", 
+                           y="Amount (₹)",
+                           title="Investment Breakdown",
+                           color="Amount (₹)",
+                           color_continuous_scale="Blues")
+            fig_inv.update_layout(height=400, xaxis_tickangle=-45)
+            st.plotly_chart(fig_inv, use_container_width=True)
+            
+            # Investment summary
+            st.subheader("💼 Investment Summary")
+            for _, row in investment_by_subcat.iterrows():
+                st.write(f"**{row['Subcategory']}**: ₹{row['Amount (₹)']:,.0f}")
+        else:
+            st.info("No investment data for current month")
+
+else:
+    # Empty state
+    st.subheader(f"📅 {datetime.now().strftime('%B %Y')}")
     grid_html = f"""
     <div class="custom-grid">
         {create_custom_metric_card("💰 Income", "₹0", "income")}
@@ -282,69 +247,49 @@ else:
         {create_custom_metric_card("💵 Balance", "₹0", "balance")}
     </div>
     """
-    
     st.markdown(grid_html, unsafe_allow_html=True)
+    st.info("No transactions recorded yet. Add your first transaction below!")
 
-# Add JavaScript to ensure grid stays intact
-st.markdown("""
-<script>
-function enforceCustomGrid() {
-    // Hide any Streamlit columns that might interfere
-    const columns = document.querySelectorAll('div[data-testid="column"]');
-    columns.forEach(col => {
-        const parent = col.closest('.custom-grid');
-        if (!parent) {
-            // Only hide columns that are not part of our custom grid
-            const hasGridSibling = col.parentElement && col.parentElement.querySelector('.custom-grid');
-            if (hasGridSibling) {
-                col.style.display = 'none';
-            }
-        }
-    });
-    
-    // Ensure our custom grid maintains its structure
-    const grids = document.querySelectorAll('.custom-grid');
-    grids.forEach(grid => {
-        grid.style.display = 'grid';
-        grid.style.gridTemplateColumns = '1fr 1fr';
-        grid.style.gridTemplateRows = 'auto auto';
-    });
-}
-
-// Run immediately and on any DOM changes
-enforceCustomGrid();
-const observer = new MutationObserver(enforceCustomGrid);
-observer.observe(document.body, { childList: true, subtree: true });
-
-// Also run on resize
-window.addEventListener('resize', enforceCustomGrid);
-</script>
-""", unsafe_allow_html=True)
-
-# Add spacing
 st.markdown("---")
 
 # -------------------------
 # Entry Form
 # -------------------------
-st.header("📝 Add New Transaction")
+st.header("📝 Add Transaction")
 
-# Category selection outside the form to enable dynamic updates
-col1, col2 = st.columns(2)
-date = col1.date_input("Date", datetime.today())
-category = col2.selectbox("Category", ["Income", "Expense", "Investment", "Other"])
-
-# Dynamic subcategory dropdown based on selected category
-subcategory_options = SUBCATEGORIES.get(category, [])
-subcategory = st.selectbox("Subcategory", subcategory_options)
-
-with st.form("entry_form"):
+# Form with dynamic key for reset
+with st.form(key=f"entry_form_{st.session_state.form_key}"):
+    col1, col2 = st.columns(2)
+    date = col1.date_input("Date", datetime.today())
+    category = col2.selectbox("Category", ["Income", "Expense", "Investment", "Other"])
+    
+    subcategory_options = SUBCATEGORIES.get(category, [])
+    subcategory = st.selectbox("Subcategory", subcategory_options)
+    
     description = st.text_input("Description")
     amount = st.number_input("Amount (₹)", min_value=0.0, format="%.2f")
     
-    submitted = st.form_submit_button("Submit Entry")
+    submitted = st.form_submit_button("💾 Add Transaction", use_container_width=True)
 
-    if submitted:
+    if submitted and amount > 0:
         new_row = [str(date), category, subcategory, description, amount]
         ws.append_row(new_row)
-        st.success("Entry added successfully!")
+        
+        # Clear cache to refresh data
+        st.cache_data.clear()
+        
+        # Increment form key to reset form
+        st.session_state.form_key += 1
+        
+        st.success("✅ Transaction added successfully!")
+        st.balloons()
+        
+        # Auto-refresh the page
+        st.rerun()
+    elif submitted and amount <= 0:
+        st.error("Please enter a valid amount greater than 0")
+
+# Add refresh button
+if st.button("🔄 Refresh Data", use_container_width=True):
+    st.cache_data.clear()
+    st.rerun()
