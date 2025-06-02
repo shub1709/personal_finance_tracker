@@ -357,7 +357,6 @@ with tab2:
                 {create_custom_metric_card("💸 Expense", f"₹{total_expense:,.0f}", "expense")}
                 {create_custom_metric_card("📈 Investment", f"₹{total_investment:,.0f}", "investment")}
                 {create_custom_metric_card("💵 Balance", f"₹{net_savings:,.0f}", "balance")}
-            </div>
             """
             st.markdown(grid_html, unsafe_allow_html=True)
         else:
