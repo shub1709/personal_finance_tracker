@@ -88,7 +88,7 @@ st.markdown("""
     
     /* Tab font sizes */
     .stTabs [data-baseweb="tab"] {
-        font-size: 0.3rem !important;
+        font-size: 0.9rem !important;
     }
     
     /* Form button */
