@@ -420,7 +420,7 @@ with tab1:
                 
                 # Small delay to show the message
                 import time
-                time.sleep(1)
+                time.sleep(2)
                 
                 # Reset form state
                 st.session_state.form_key += 1
