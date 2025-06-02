@@ -1,10 +1,11 @@
 import streamlit as st
 import gspread
 import pandas as pd
-from google.oauth2.service_account import Credentials
+from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 import plotly.express as px
 import plotly.graph_objects as go
+import json
 
 # MUST BE FIRST - Set page config
 st.set_page_config(page_title="💰 Finance Tracker", layout="centered", initial_sidebar_state="collapsed")
@@ -103,15 +104,17 @@ def get_gsheet_connection():
     try:
         # Define the scope for Google Sheets and Google Drive API
         scope = [
+            "https://spreadsheets.google.com/feeds",
             "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive.file",
             "https://www.googleapis.com/auth/drive"
         ]
         
         # Get credentials from Streamlit secrets
         creds_dict = st.secrets["gcp_service_account"]
         
-        # Create credentials object
-        creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+        # Create credentials object using oauth2client (more stable for gspread)
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
         
         # Authorize the client
         client = gspread.authorize(creds)
@@ -188,9 +191,11 @@ def format_amount(value):
 # Function to add transaction with error handling
 def add_transaction(ws, date, category, subcategory, description, amount):
     try:
-        new_row = [str(date), category, subcategory, description, amount]
-        ws.append_row(new_row)
+        new_row = [str(date), category, subcategory, description, float(amount)]
+        result = ws.append_row(new_row, value_input_option='USER_ENTERED')
         return True, "Transaction added successfully!"
+    except gspread.exceptions.APIError as e:
+        return False, f"Google Sheets API Error: {str(e)}"
     except Exception as e:
         return False, f"Error adding transaction: {str(e)}"
 
@@ -461,7 +466,6 @@ with tab2:
             {create_custom_metric_card("💸 Expense", "₹0", "expense")}
             {create_custom_metric_card("📈 Investment", "₹0", "investment")}
             {create_custom_metric_card("💵 Balance", "₹0", "balance")}
-        </div>
         """
         st.markdown(grid_html, unsafe_allow_html=True)
         st.info("No transactions recorded yet. Add your first transaction in the 'Add Transaction' tab!")
