@@ -6,6 +6,7 @@ from datetime import datetime
 import plotly.express as px
 import plotly.graph_objects as go
 import json
+from google.oauth2.service_account import Credentials
 
 # MUST BE FIRST - Set page config
 st.set_page_config(page_title="💰 Finance Tracker", layout="centered", initial_sidebar_state="collapsed")
@@ -102,23 +103,20 @@ st.markdown("""
 @st.cache_resource
 def get_gsheet_connection():
     try:
-        # Define the scope for Google Sheets and Google Drive API
+        # Define the required scope
         scope = [
-            "https://spreadsheets.google.com/feeds",
             "https://www.googleapis.com/auth/spreadsheets",
-            "https://www.googleapis.com/auth/drive.file",
             "https://www.googleapis.com/auth/drive"
         ]
-        
-        # Get credentials from Streamlit secrets
+
+        # Get credentials from secrets
         creds_dict = st.secrets["gcp_service_account"]
-        
-        # Create credentials object using oauth2client (more stable for gspread)
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-        
-        # Authorize the client
+
+        # Create Credentials object using google-auth
+        creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+
+        # Authorize the gspread client
         client = gspread.authorize(creds)
-        
         return client
     except Exception as e:
         st.error(f"Error connecting to Google Sheets: {str(e)}")
