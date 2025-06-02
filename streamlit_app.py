@@ -38,8 +38,8 @@ h1 {
 /* Optional: control mobile view */
 @media (max-width: 768px) {
     .block-container {
-        padding-left: 0.5rem !important;
-        padding-right: 0.5rem !important;
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
     }
 }
 </style>
