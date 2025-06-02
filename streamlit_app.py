@@ -21,7 +21,7 @@ custom_css = """
 
     /* Reduce top padding globally */
     .main .block-container {
-        padding-top: 0.5rem !important;
+        padding-top: 0.1rem !important;
         padding-left: 0.5rem;
         padding-right: 0.5rem;
         max-width: 100%;
