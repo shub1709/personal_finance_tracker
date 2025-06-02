@@ -634,7 +634,7 @@ with tab2:
                         font=dict(size=12),
                         title_font_size=16
                     )
-                    fig_inv.update_traces(textposition='outside', marker_color='#007bff')
+                    fig_inv.update_traces(textposition='outside', marker_color='#c8b002')
                     # Adjust y-axis to accommodate labels
                     max_value = investment_by_subcat['Amount (₹)'].max()
                     fig_inv.update_yaxes(range=[0, max_value * 1.15])
