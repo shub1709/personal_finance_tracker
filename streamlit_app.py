@@ -255,7 +255,7 @@ def add_transaction(date, category, subcategory, description, amount):
         date_str = date.strftime("%Y-%m-%d") if hasattr(date, 'strftime') else str(date)
         
         # Prepare the row data
-        new_row = [date_str, category, subcategory, description, float(amount)]
+        new_row = [date_str, category, subcategory, description.strip().title(), float(amount)]
         
         if DEBUG_MODE:
             st.write(f"🔍 Debug: Row data prepared: {new_row}")
