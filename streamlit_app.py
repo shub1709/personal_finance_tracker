@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 # MUST BE FIRST - Set page config
 st.set_page_config(page_title="💰 Finance Tracker", layout="centered", initial_sidebar_state="collapsed")
 
-# Mobile-optimized CSS
+# Mobile-optimized CSS with reduced font sizes
 st.markdown("""
 <style>    
     .main .block-container {
@@ -75,12 +75,24 @@ st.markdown("""
         .custom-metric .metric-value { font-size: 1rem; }
     }
     
-    h1 { font-size: 1.4rem; margin: 0.5rem 0; }
-    h2 { font-size: 1.2rem; margin: 0.4rem 0; }
-    h3 { font-size: 1rem; margin: 0.3rem 0; }
+    /* Reduced font sizes for headings */
+    h1 { font-size: 1.1rem !important; margin: 0.4rem 0 !important; }
+    h2 { font-size: 0.95rem !important; margin: 0.3rem 0 !important; }
+    h3 { font-size: 0.85rem !important; margin: 0.25rem 0 !important; }
     
+    /* Reduced label font sizes */
     .stSelectbox label, .stDateInput label, .stTextInput label, .stNumberInput label {
-        font-size: 0.85rem;
+        font-size: 0.8rem !important;
+    }
+    
+    /* Tab font sizes */
+    .stTabs [data-baseweb="tab"] {
+        font-size: 0.85rem !important;
+    }
+    
+    /* Form button */
+    .stButton button {
+        font-size: 0.85rem !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -145,7 +157,11 @@ def format_amount(value):
 if 'form_key' not in st.session_state:
     st.session_state.form_key = 0
 
-# CREATE TABS HERE - This was missing!
+# Initialize session state for form data
+if 'form_category' not in st.session_state:
+    st.session_state.form_category = "Expense"
+
+# CREATE TABS HERE
 tab1, tab2 = st.tabs(["📝 Add Transaction", "📊 Summary & Analytics"])
 
 # -------------------------
@@ -154,21 +170,32 @@ tab1, tab2 = st.tabs(["📝 Add Transaction", "📊 Summary & Analytics"])
 with tab1:
     st.header("📝 Add New Transaction")
     
-    # Form with dynamic key for reset
-    with st.form(key=f"entry_form_{st.session_state.form_key}"):
-        col1, col2 = st.columns(2)
-        date = col1.date_input("Date", datetime.today())
-        category = col2.selectbox("Category", ["Income", "Expense", "Investment", "Other"])
-        
-        subcategory_options = SUBCATEGORIES.get(category, [])
-        subcategory = st.selectbox("Subcategory", subcategory_options)
-        
-        description = st.text_input("Description")
-        amount = st.number_input("Amount (₹)", min_value=0.0, format="%.2f")
-        
-        submitted = st.form_submit_button("💾 Add Transaction", use_container_width=True)
-
-        if submitted and amount > 0:
+    # Form inputs OUTSIDE the form to enable dynamic updates
+    col1, col2 = st.columns(2)
+    date = col1.date_input("Date", datetime.today())
+    
+    # Category selection with callback to update subcategories
+    category = col2.selectbox(
+        "Category", 
+        ["Expense", "Income", "Investment", "Other"],
+        index=["Expense", "Income", "Investment", "Other"].index(st.session_state.form_category),
+        key="category_select"
+    )
+    
+    # Update session state when category changes
+    if category != st.session_state.form_category:
+        st.session_state.form_category = category
+    
+    # Dynamic subcategory based on selected category
+    subcategory_options = SUBCATEGORIES.get(category, [])
+    subcategory = st.selectbox("Subcategory", subcategory_options)
+    
+    description = st.text_input("Description")
+    amount = st.number_input("Amount (₹)", min_value=0.0, format="%.0f")
+    
+    # Submit button outside form for immediate response
+    if st.button("💾 Add Transaction", use_container_width=True):
+        if amount > 0:
             new_row = [str(date), category, subcategory, description, amount]
             ws.append_row(new_row)
             
@@ -183,7 +210,7 @@ with tab1:
             
             # Auto-refresh the page after successful entry
             st.rerun()
-        elif submitted and amount <= 0:
+        else:
             st.error("Please enter a valid amount greater than 0")
     
     # Show recent transactions in the add transaction tab for reference
@@ -271,7 +298,7 @@ with tab2:
                 {create_custom_metric_card("💸 Expense", f"₹{total_expense:,.0f}", "expense")}
                 {create_custom_metric_card("📈 Investment", f"₹{total_investment:,.0f}", "investment")}
                 {create_custom_metric_card("💵 Balance", f"₹{net_savings:,.0f}", "balance")}
-            </div>
+            
             """
             st.markdown(grid_html, unsafe_allow_html=True)
         else:
@@ -287,36 +314,9 @@ with tab2:
             st.header("📈 Analytics")
             
             # Chart tabs for Income, Expenses, and Investments
-            chart_tab1, chart_tab2, chart_tab3 = st.tabs(["💰 Income", "💸 Expenses", "📈 Investments"])
-            
+            chart_tab1, chart_tab2, chart_tab3 = st.tabs(["💸 Expenses", "💰 Income", "📈 Investments"])
+
             with chart_tab1:
-                income_df = selected_period_df[selected_period_df["Category"] == "Income"]
-                if not income_df.empty:
-                    income_by_subcat = income_df.groupby("Subcategory")["Amount (₹)"].sum().reset_index()
-                    income_by_subcat = income_by_subcat.sort_values("Amount (₹)", ascending=False)
-                    
-                    # Add formatted labels for better readability
-                    income_by_subcat['Amount_Label'] = income_by_subcat['Amount (₹)'].apply(format_amount)
-                    
-                    fig_inc = px.bar(income_by_subcat, 
-                                   x="Subcategory", 
-                                   y="Amount (₹)",
-                                   title="Income Breakdown",
-                                   color="Amount (₹)",
-                                   color_continuous_scale="Greens",
-                                   text="Amount_Label")
-                    fig_inc.update_layout(height=400, xaxis_tickangle=-45)
-                    fig_inc.update_traces(textposition='outside')
-                    st.plotly_chart(fig_inc, use_container_width=True)
-                    
-                    # Income summary
-                    st.subheader("💰 Income Summary")
-                    for _, row in income_by_subcat.iterrows():
-                        st.write(f"**{row['Subcategory']}**: ₹{row['Amount (₹)']:,.0f}")
-                else:
-                    st.info("No income data for selected period")
-            
-            with chart_tab2:
                 expense_df = selected_period_df[selected_period_df["Category"] == "Expense"]
                 if not expense_df.empty:
                     expense_by_subcat = expense_df.groupby("Subcategory")["Amount (₹)"].sum().reset_index()
@@ -329,11 +329,12 @@ with tab2:
                                    x="Subcategory", 
                                    y="Amount (₹)",
                                    title="Expense Breakdown",
-                                   color="Amount (₹)",
-                                   color_continuous_scale="Reds",
                                    text="Amount_Label")
-                    fig_exp.update_layout(height=400, xaxis_tickangle=-45)
-                    fig_exp.update_traces(textposition='outside')
+                    fig_exp.update_layout(height=400, xaxis_tickangle=-45, showlegend=False)
+                    fig_exp.update_traces(textposition='outside', marker_color='#dc3545')
+                    # Adjust y-axis to accommodate labels
+                    max_value = expense_by_subcat['Amount (₹)'].max()
+                    fig_exp.update_yaxes(range=[0, max_value * 1.15])
                     st.plotly_chart(fig_exp, use_container_width=True)
                     
                     # Top expenses
@@ -342,6 +343,37 @@ with tab2:
                         st.write(f"**{row['Subcategory']}**: ₹{row['Amount (₹)']:,.0f}")
                 else:
                     st.info("No expense data for selected period")
+
+
+            with chart_tab2:
+                income_df = selected_period_df[selected_period_df["Category"] == "Income"]
+                if not income_df.empty:
+                    income_by_subcat = income_df.groupby("Subcategory")["Amount (₹)"].sum().reset_index()
+                    income_by_subcat = income_by_subcat.sort_values("Amount (₹)", ascending=False)
+                    
+                    # Add formatted labels for better readability
+                    income_by_subcat['Amount_Label'] = income_by_subcat['Amount (₹)'].apply(format_amount)
+                    
+                    fig_inc = px.bar(income_by_subcat, 
+                                   x="Subcategory", 
+                                   y="Amount (₹)",
+                                   title="Income Breakdown",
+                                   text="Amount_Label")
+                    fig_inc.update_layout(height=400, xaxis_tickangle=-45, showlegend=False)
+                    fig_inc.update_traces(textposition='outside', marker_color='#28a745')
+                    # Adjust y-axis to accommodate labels
+                    max_value = income_by_subcat['Amount (₹)'].max()
+                    fig_inc.update_yaxes(range=[0, max_value * 1.15])
+                    st.plotly_chart(fig_inc, use_container_width=True)
+                    
+                    # Income summary
+                    st.subheader("💰 Income Summary")
+                    for _, row in income_by_subcat.iterrows():
+                        st.write(f"**{row['Subcategory']}**: ₹{row['Amount (₹)']:,.0f}")
+                else:
+                    st.info("No income data for selected period")
+            
+
             
             with chart_tab3:
                 investment_df = selected_period_df[selected_period_df["Category"] == "Investment"]
@@ -356,11 +388,12 @@ with tab2:
                                    x="Subcategory", 
                                    y="Amount (₹)",
                                    title="Investment Breakdown",
-                                   color="Amount (₹)",
-                                   color_continuous_scale="Blues",
                                    text="Amount_Label")
-                    fig_inv.update_layout(height=400, xaxis_tickangle=-45)
-                    fig_inv.update_traces(textposition='outside')
+                    fig_inv.update_layout(height=400, xaxis_tickangle=-45, showlegend=False)
+                    fig_inv.update_traces(textposition='outside', marker_color='#007bff')
+                    # Adjust y-axis to accommodate labels
+                    max_value = investment_by_subcat['Amount (₹)'].max()
+                    fig_inv.update_yaxes(range=[0, max_value * 1.15])
                     st.plotly_chart(fig_inv, use_container_width=True)
                     
                     # Investment summary
