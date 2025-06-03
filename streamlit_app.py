@@ -184,6 +184,12 @@ custom_css = """
     transform: scale(1.02);
     border-color: #bbb;
 }
+
+button.custom-metric {
+    all: unset;
+    cursor: pointer;
+    width: 100%;
+}
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
@@ -747,7 +753,7 @@ with tab2:
     st.header("📊 Analytics & Calendar")
 
     if not df.empty:
-        # Month and Year selection
+        # Year and Month selectors
         col1, col2 = st.columns(2)
 
         with col1:
@@ -772,12 +778,11 @@ with tab2:
 
         selected_months = [month for month, name in month_names if name in selected_month_names]
 
-        # Session state to store selected calendar filter
+        # Initialize session state for calendar filter
         if 'calendar_view_category' not in st.session_state:
             st.session_state.calendar_view_category = "All"
 
         if selected_months:
-            # Filter data
             selected_period_df = df[(df["Date"].dt.month.isin(selected_months)) & (df["Date"].dt.year == selected_year)]
 
             total_income = selected_period_df[selected_period_df["Category"] == "Income"]["Amount (₹)"].sum()
@@ -785,28 +790,37 @@ with tab2:
             total_investment = selected_period_df[selected_period_df["Category"] == "Investment"]["Amount (₹)"].sum()
             net_savings = total_income - total_expense - total_investment
 
-            # 2x2 button grid using Streamlit columns + CSS styling
-            st.markdown("### 📅 Monthly Summary (Tap a card to filter calendar)")
-            
-            grid_rows = [
-                ("💰 Income", f"₹{total_income:,.0f}", "Income", "income"),
-                ("💸 Expense", f"₹{total_expense:,.0f}", "Expense", "expense"),
-                ("📈 Investment", f"₹{total_investment:,.0f}", "Investment", "investment"),
-                ("💵 Balance", f"₹{net_savings:,.0f}", "All", "balance")
+            st.markdown("### 📅 Monthly Summary (Tap a card to filter calendar view)")
+
+            # Clickable metric cards using HTML
+            metrics = [
+                {"label": "💰 Income", "value": total_income, "type": "Income"},
+                {"label": "💸 Expense", "value": total_expense, "type": "Expense"},
+                {"label": "📈 Investment", "value": total_investment, "type": "Investment"},
+                {"label": "💵 Balance", "value": net_savings, "type": "All"},
             ]
-            
-            for i in range(0, len(grid_rows), 2):
-                col1, col2 = st.columns(2)
-                
-                for j, col in enumerate((col1, col2)):
-                    if i + j < len(grid_rows):
-                        emoji, amount, category, key = grid_rows[i + j]
-                        button_label = f"{emoji}\n{amount}"
-                        if col.button(button_label, key=f"btn_{key}"):
-                            st.session_state.calendar_view_category = category
 
+            with st.form("metric_form", clear_on_submit=False):
+                clicked = st.form_submit_button("")  # Just a placeholder submit
+                html = '<div class="custom-grid">'
+                for metric in metrics:
+                    html += f"""
+                    <button type="submit" name="metric_clicked" value="{metric['type']}"
+                        class="custom-metric metric-{metric['type'].lower()}">
+                        <div class="metric-label">{metric['label']}</div>
+                        <div class="metric-value">₹{metric['value']:,.0f}</div>
+                    </button>
+                    """
+                html += '</div>'
+                st.markdown(html, unsafe_allow_html=True)
 
-            # Render calendar for the first selected month
+            # Handle click by reading query param manually
+            import streamlit as stlit_internal  # use the form input trick
+            if "metric_clicked" in stlit_internal.runtime.scriptrunner.get_script_run_ctx()._form_data:
+                selected = stlit_internal.runtime.scriptrunner.get_script_run_ctx()._form_data["metric_clicked"]
+                st.session_state.calendar_view_category = selected
+
+            # Render calendar for first selected month
             cal_month = selected_months[0]
             filter_category = st.session_state.calendar_view_category
 
