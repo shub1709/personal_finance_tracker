@@ -6,6 +6,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import json
 from google.oauth2.service_account import Credentials
+import calendar
 
 # MUST BE FIRST - Set page config
 st.set_page_config(page_title="💰 Finance Tracker", layout="centered", initial_sidebar_state="collapsed")
@@ -295,6 +296,192 @@ def format_amount(value):
     else:
         return f"₹{value:.0f}"
 
+
+
+def create_calendar_view(df, selected_year, selected_month):
+    """Create a mobile-friendly calendar view showing daily expenses"""
+    import calendar
+    
+    # Filter data for selected month/year
+    month_data = df[(df["Date"].dt.year == selected_year) & 
+                   (df["Date"].dt.month == selected_month)]
+    
+    # Group by date and calculate daily totals
+    daily_summary = month_data.groupby([month_data["Date"].dt.day, "Category"])["Amount (₹)"].sum().reset_index()
+    daily_summary = daily_summary.pivot(index='Date', columns='Category', values='Amount (₹)').fillna(0)
+    
+    # Get calendar layout
+    cal = calendar.monthcalendar(selected_year, selected_month)
+    month_name = calendar.month_name[selected_month]
+    
+    # Create HTML calendar
+    calendar_html = f"""
+    <style>
+    .calendar-container {{
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        margin: 0 auto;
+        max-width: 100%;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }}
+    
+    .calendar-header {{
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-align: center;
+        padding: 1rem;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }}
+    
+    .calendar-grid {{
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+        background: #e9ecef;
+    }}
+    
+    .day-header {{
+        background: #f8f9fa;
+        padding: 0.5rem 0.2rem;
+        text-align: center;
+        font-weight: 600;
+        font-size: 0.8rem;
+        color: #6c757d;
+        border-bottom: 1px solid #dee2e6;
+    }}
+    
+    .calendar-day {{
+        background: white;
+        min-height: 80px;
+        padding: 0.3rem;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        border: 1px solid #f0f0f0;
+    }}
+    
+    .calendar-day.other-month {{
+        background: #f8f9fa;
+        color: #adb5bd;
+    }}
+    
+    .calendar-day.today {{
+        background: #fff3cd;
+        border: 2px solid #ffc107;
+    }}
+    
+    .day-number {{
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 0.2rem;
+        color: #495057;
+    }}
+    
+    .expense-amount {{
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #dc3545;
+        background: #ffe6e6;
+        padding: 0.1rem 0.3rem;
+        border-radius: 8px;
+        margin: 0.1rem 0;
+        text-align: center;
+    }}
+    
+    .income-amount {{
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #28a745;
+        background: #e6ffe6;
+        padding: 0.1rem 0.3rem;
+        border-radius: 8px;
+        margin: 0.1rem 0;
+        text-align: center;
+    }}
+    
+    .investment-amount {{
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #c8b002;
+        background: #fffde6;
+        padding: 0.1rem 0.3rem;
+        border-radius: 8px;
+        margin: 0.1rem 0;
+        text-align: center;
+    }}
+    
+    @media (max-width: 768px) {{
+        .calendar-day {{
+            min-height: 70px;
+            padding: 0.2rem;
+        }}
+        .day-number {{
+            font-size: 0.8rem;
+        }}
+        .expense-amount, .income-amount, .investment-amount {{
+            font-size: 0.6rem;
+            padding: 0.05rem 0.2rem;
+        }}
+    }}
+    </style>
+    
+    <div class="calendar-container">
+        <div class="calendar-header">
+            {month_name} {selected_year}
+        </div>
+        <div class="calendar-grid">
+            <!-- Day headers -->
+            <div class="day-header">Sun</div>
+            <div class="day-header">Mon</div>
+            <div class="day-header">Tue</div>
+            <div class="day-header">Wed</div>
+            <div class="day-header">Thu</div>
+            <div class="day-header">Fri</div>
+            <div class="day-header">Sat</div>
+    """
+    
+    # Get today's date for highlighting
+    today = datetime.today()
+    is_current_month = (today.year == selected_year and today.month == selected_month)
+    
+    # Generate calendar days
+    for week in cal:
+        for day in week:
+            if day == 0:
+                calendar_html += '<div class="calendar-day other-month"></div>'
+            else:
+                # Check if this is today
+                is_today = is_current_month and day == today.day
+                today_class = " today" if is_today else ""
+                
+                calendar_html += f'<div class="calendar-day{today_class}">'
+                calendar_html += f'<div class="day-number">{day}</div>'
+                
+                # Add transaction amounts for this day
+                if day in daily_summary.index:
+                    day_data = daily_summary.loc[day]
+                    
+                    if day_data.get('Expense', 0) > 0:
+                        calendar_html += f'<div class="expense-amount">-₹{day_data["Expense"]:,.0f}</div>'
+                    
+                    if day_data.get('Income', 0) > 0:
+                        calendar_html += f'<div class="income-amount">+₹{day_data["Income"]:,.0f}</div>'
+                    
+                    if day_data.get('Investment', 0) > 0:
+                        calendar_html += f'<div class="investment-amount">📈₹{day_data["Investment"]:,.0f}</div>'
+                
+                calendar_html += '</div>'
+    
+    calendar_html += """
+        </div>
+    </div>
+    """
+    
+    return calendar_html
+
 # Function to add transaction with fresh connection
 def add_transaction(date, category, subcategory, description, amount):
     try:
@@ -400,7 +587,8 @@ if 'form_category' not in st.session_state:
     st.session_state.form_category = "Expense"
 
 # CREATE TABS HERE
-tab1, tab2 = st.tabs(["📝 Add Transaction", "📊 Summary & Analytics"])
+tab1, tab2, tab3 = st.tabs(["📝 Add Transaction", "📊 Summary & Analytics", "📅 Calendar"])
+
 
 # -------------------------
 # TAB 1: ADD TRANSACTION
@@ -720,6 +908,100 @@ with tab2:
         st.markdown(grid_html, unsafe_allow_html=True)
         st.info("No transactions recorded yet. Add your first transaction in the 'Add Transaction' tab!")
 
+
+# -------------------------
+# TAB 3: CALENDAR VIEW
+# -------------------------
+with tab3:
+    st.header("📅 Monthly Calendar")
+    
+    if not df.empty:
+        # Month and Year selection for calendar
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            available_years = sorted(df["Date"].dt.year.unique(), reverse=True)
+            default_year = datetime.now().year if datetime.now().year in available_years else available_years[0]
+            cal_selected_year = st.selectbox("Year", available_years, 
+                                           index=available_years.index(default_year), 
+                                           key="calendar_year")
+        
+        with col2:
+            # Get months available for the selected year
+            year_data = df[df["Date"].dt.year == cal_selected_year]
+            available_months = sorted(year_data["Date"].dt.month.unique())
+            
+            # Set default to current month if available
+            current_month = datetime.now().month
+            default_month = current_month if (current_month in available_months and 
+                                           cal_selected_year == datetime.now().year) else available_months[0]
+            
+            month_options = [(month, calendar.month_name[month]) for month in available_months]
+            selected_month_name = st.selectbox(
+                "Month", 
+                options=[name for _, name in month_options],
+                index=[name for month, name in month_options].index(calendar.month_name[default_month]),
+                key="calendar_month"
+            )
+            
+            # Get the month number
+            cal_selected_month = next(month for month, name in month_options if name == selected_month_name)
+        
+        # Generate and display calendar
+        calendar_html = create_calendar_view(df, cal_selected_year, cal_selected_month)
+        st.markdown(calendar_html, unsafe_allow_html=True)
+        
+        # Add legend
+        st.markdown("""
+        <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
+            <span style="background: #ffe6e6; color: #dc3545; padding: 0.2rem 0.5rem; border-radius: 8px; font-size: 0.8rem;">💸 Expenses</span>
+            <span style="background: #e6ffe6; color: #28a745; padding: 0.2rem 0.5rem; border-radius: 8px; font-size: 0.8rem;">💰 Income</span>
+            <span style="background: #fffde6; color: #c8b002; padding: 0.2rem 0.5rem; border-radius: 8px; font-size: 0.8rem;">📈 Investments</span>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Show monthly summary below calendar
+        st.markdown("---")
+        month_data = df[(df["Date"].dt.year == cal_selected_year) & 
+                       (df["Date"].dt.month == cal_selected_month)]
+        
+        if not month_data.empty:
+            col1, col2, col3 = st.columns(3)
+            
+            total_income = month_data[month_data["Category"] == "Income"]["Amount (₹)"].sum()
+            total_expense = month_data[month_data["Category"] == "Expense"]["Amount (₹)"].sum()
+            total_investment = month_data[month_data["Category"] == "Investment"]["Amount (₹)"].sum()
+            
+            col1.metric("💰 Income", f"₹{total_income:,.0f}")
+            col2.metric("💸 Expenses", f"₹{total_expense:,.0f}")
+            col3.metric("📈 Investments", f"₹{total_investment:,.0f}")
+            
+            # Daily breakdown (expandable)
+            with st.expander("📋 Daily Breakdown"):
+                daily_transactions = month_data.groupby(month_data["Date"].dt.day).agg({
+                    "Amount (₹)": ["count", "sum"],
+                    "Category": lambda x: x.value_counts().to_dict()
+                }).reset_index()
+                
+                for _, row in daily_transactions.iterrows():
+                    day = row["Date"]
+                    count = row[("Amount (₹)", "count")]
+                    total = row[("Amount (₹)", "sum")]
+                    categories = row[("Category", "<lambda>")]
+                    
+                    st.write(f"**Day {day}**: {count} transactions, Total: ₹{total:,.0f}")
+                    category_text = ", ".join([f"{cat}: {cnt}" for cat, cnt in categories.items()])
+                    st.write(f"   ↳ {category_text}")
+        
+    else:
+        st.info("No transactions recorded yet. Add your first transaction to see the calendar view!")
+        
+        # Show empty calendar for current month
+        current_year = datetime.now().year
+        current_month = datetime.now().month
+        empty_calendar = create_calendar_view(pd.DataFrame(), current_year, current_month)
+        st.markdown(empty_calendar, unsafe_allow_html=True)
+        
 # Debug section at the bottom
 if DEBUG_MODE:
     st.markdown("---")
