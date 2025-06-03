@@ -164,21 +164,26 @@ custom_css = """
         font-size: 0.85rem !important;
     }
 
-
+/* Make buttons look like cards */
 .stButton > button {
     background: linear-gradient(135deg, #ffffff, #f8f9fa);
     border: 2px solid #e0e0e0;
     border-radius: 12px;
-    padding: 1rem;
-    font-size: 1rem;
+    padding: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 600;
     text-align: center;
-    height: 100%;
+    height: 100px;
     width: 100%;
     white-space: pre-line;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+    transition: all 0.2s ease-in-out;
 }
 
+.stButton > button:hover {
+    transform: scale(1.02);
+    border-color: #bbb;
+}
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
