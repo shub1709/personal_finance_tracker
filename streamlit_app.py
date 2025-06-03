@@ -768,7 +768,7 @@ with tab2:
             # Custom CSS to force 2x2 grid on mobile
             st.markdown("""
             <style>
-            @media (max-width: 768px) {
+            @media (max-width: 1200px) {
                 div[data-testid="stHorizontalBlock"] {
                     display: flex !important;
                     flex-wrap: wrap !important;
