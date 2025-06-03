@@ -199,6 +199,22 @@ custom_css = """
         color: #495057;
         font-size: 1.1rem !important;
     }
+
+    /* Evenly distribute tabs horizontally */
+    .stTabs [data-baseweb="tab-list"] {
+        display: flex !important;
+        justify-content: space-evenly !important;
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        flex-grow: 1 !important;
+        text-align: center !important;
+        padding: 0.5rem 0.25rem !important;
+        font-size: 0.95rem !important;
+        font-weight: 700 !important;  /* Bold */
+    }
+
+
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
@@ -514,6 +530,31 @@ def create_calendar_view(df, selected_year, selected_month, category_filter=None
     """
     
     return calendar_html
+
+
+def get_monthly_trend(df, category, months=6):
+    today = datetime.today()
+    start_month = today.month - months
+    start_year = today.year
+    if start_month <= 0:
+        start_month += 12
+        start_year -= 1
+
+    # Get data from (start_year, start_month) onward
+    df = df[df["Date"] >= datetime(start_year, start_month, 1)]
+    df = df[df["Category"] == category]
+
+    if df.empty:
+        return pd.DataFrame()
+
+    # Group by Year+Month and sum
+    df["YearMonth"] = df["Date"].dt.to_period("M")
+    trend_df = df.groupby("YearMonth")["Amount (₹)"].sum().reset_index()
+    trend_df["YearMonth"] = trend_df["YearMonth"].astype(str)
+    trend_df["YearMonth"] = trend_df["YearMonth"].apply(lambda x: pd.to_datetime(x).strftime("%b %Y"))
+
+    return trend_df
+
 
 # Function to add transaction with fresh connection
 def add_transaction(date, category, subcategory, description, amount):
@@ -853,6 +894,7 @@ with tab2:
                         xaxis_tickangle=-45, 
                         showlegend=False,
                         font=dict(size=12),
+                        title_x=0.4,
                         title_font_size=16,
                         yaxis_title=None
                     )
@@ -862,6 +904,53 @@ with tab2:
                     fig_exp.update_yaxes(range=[0, max_value * 1.2])
                     
                     st.plotly_chart(fig_exp, use_container_width=True, config={'staticPlot': True})
+
+                    # Monthly trend line chart
+                    trend_exp = get_monthly_trend(df, "Expense", months=6)
+                    trend_exp["Amount_Label"] = trend_exp["Amount (₹)"].apply(format_amount)
+
+                    if not trend_exp.empty:
+                        # st.markdown("6 Months Trend")
+                        fig_line_exp = px.line(
+                            trend_exp,
+                            x="YearMonth",
+                            y="Amount (₹)",
+                            text="Amount_Label",  # 👈 Use your formatted labels
+                            markers=True,
+                            line_shape="linear",
+                            title="6 Months Trend"
+                        )
+
+                        fig_line_exp.update_traces(
+                            line_color='#dc3545',
+                            textposition="top center"
+                        )
+
+                        fig_line_exp.update_layout(
+                            yaxis_title="Amount (₹)",
+                            xaxis_title="Month",
+                            font=dict(size=12),
+                            height=300,
+                            title_font_size=16,
+                            title_x=0.42,
+                            xaxis_type='category',
+                            margin=dict(t=80)
+                        )
+
+                        # Generate custom y-axis tick labels
+                        y_max = trend_exp["Amount (₹)"].max()
+                        y_pad = y_max * 0.2  # 20% padding
+                        fig_line_exp.update_yaxes(range=[0, y_max + y_pad])
+                        tick_step = y_max / 5  # Or use a fixed step like 50000
+                        tick_vals = [round(i) for i in list(range(0, int(y_max * 1.1), int(tick_step)))]
+
+                        fig_line_exp.update_yaxes(
+                            range=[0, y_max + y_max * 0.2],
+                            tickvals=tick_vals,
+                            ticktext=[format_amount(v) for v in tick_vals]
+                        )
+
+                        st.plotly_chart(fig_line_exp, use_container_width=True, config={'staticPlot': True})
                     
                     # Top expenses
                     # st.subheader("🔝 Top Expenses")
@@ -902,6 +991,7 @@ with tab2:
                         showlegend=False,
                         font=dict(size=12),
                         title_font_size=16,
+                        title_x=0.4,
                         yaxis_title=None
                     )
                     fig_inc.update_traces(textposition='outside', marker_color='#28a745')
@@ -910,6 +1000,56 @@ with tab2:
                     fig_inc.update_yaxes(range=[0, max_value * 1.2])
                     
                     st.plotly_chart(fig_inc, use_container_width=True, config={'staticPlot': True})
+
+
+                    # Monthly trend line chart
+                    trend_exp = get_monthly_trend(df, "Income", months=6)
+                    trend_exp["Amount_Label"] = trend_exp["Amount (₹)"].apply(format_amount)
+
+                    if not trend_exp.empty:
+                        # st.markdown("6 Months Trend")
+                        fig_line_exp = px.line(
+                            trend_exp,
+                            x="YearMonth",
+                            y="Amount (₹)",
+                            text="Amount_Label",  # 👈 Use your formatted labels
+                            markers=True,
+                            line_shape="linear",
+                            title="6 Months Trend"
+                        )
+
+                        fig_line_exp.update_traces(
+                            line_color='#28a745',
+                            textposition="top center"
+                        )
+
+                        fig_line_exp.update_layout(
+                            yaxis_title="Amount (₹)",
+                            xaxis_title="Month",
+                            font=dict(size=12),
+                            height=300,
+                            title_font_size=16,
+                            title_x=0.42,
+                            xaxis_type='category',
+                            margin=dict(t=80)
+                        )
+
+
+                        # Generate custom y-axis tick labels
+                        y_max = trend_exp["Amount (₹)"].max()
+                        y_pad = y_max * 0.2  # 20% padding
+                        fig_line_exp.update_yaxes(range=[0, y_max + y_pad])
+                        tick_step = y_max / 5  # Or use a fixed step like 50000
+                        tick_vals = [round(i) for i in list(range(0, int(y_max * 1.1), int(tick_step)))]
+
+                        fig_line_exp.update_yaxes(
+                            range=[0, y_max + y_max * 0.2],
+                            tickvals=tick_vals,
+                            ticktext=[format_amount(v) for v in tick_vals]
+                        )
+
+                        st.plotly_chart(fig_line_exp, use_container_width=True, config={'staticPlot': True})
+
                     
                     # Income summary
                     # st.subheader("💰 Income Summary")
@@ -950,6 +1090,7 @@ with tab2:
                         showlegend=False,
                         font=dict(size=12),
                         title_font_size=16,
+                        title_x=0.4,
                         yaxis_title=None
                     )
                     fig_inv.update_traces(textposition='outside', marker_color='#c8b002')
@@ -958,6 +1099,53 @@ with tab2:
                     fig_inv.update_yaxes(range=[0, max_value * 1.2])
                     
                     st.plotly_chart(fig_inv, use_container_width=True, config={'staticPlot': True})
+
+                    # Monthly trend line chart
+                    trend_exp = get_monthly_trend(df, "Investment", months=6)
+                    trend_exp["Amount_Label"] = trend_exp["Amount (₹)"].apply(format_amount)
+
+                    if not trend_exp.empty:
+                        # st.markdown("6 Months Trend")
+                        fig_line_exp = px.line(
+                            trend_exp,
+                            x="YearMonth",
+                            y="Amount (₹)",
+                            text="Amount_Label",  # 👈 Use your formatted labels
+                            markers=True,
+                            line_shape="linear",
+                            title="6 Months Trend"
+                        )
+
+                        fig_line_exp.update_traces(
+                            line_color='#c8b002',
+                            textposition="top center"
+                        )
+
+                        fig_line_exp.update_layout(
+                            yaxis_title="Amount (₹)",
+                            xaxis_title="Month",
+                            font=dict(size=12),
+                            height=300,
+                            title_font_size=16,
+                            title_x=0.42,
+                            xaxis_type='category',
+                            margin=dict(t=80)
+                        )
+
+                        # Generate custom y-axis tick labels
+                        y_max = trend_exp["Amount (₹)"].max()
+                        y_pad = y_max * 0.2  # 20% padding
+                        fig_line_exp.update_yaxes(range=[0, y_max + y_pad])
+                        tick_step = y_max / 5  # Or use a fixed step like 50000
+                        tick_vals = [round(i) for i in list(range(0, int(y_max * 1.1), int(tick_step)))]
+
+                        fig_line_exp.update_yaxes(
+                            range=[0, y_max + y_max * 0.2],
+                            tickvals=tick_vals,
+                            ticktext=[format_amount(v) for v in tick_vals]
+                        )
+
+                        st.plotly_chart(fig_line_exp, use_container_width=True, config={'staticPlot': True})
                     
                     # Investment summary
                     # st.subheader("💼 Investment Summary")
