@@ -150,6 +150,40 @@ custom_css = """
     .stButton button {
         font-size: 0.85rem !important;
     }
+
+    /* Calendar specific styles for different categories */
+    .calendar-expense .calendar-day .expense-amount {
+        background: #ffe6e6 !important;
+        color: #dc3545 !important;
+        border: 1px solid #f5c6cb !important;
+    }
+    
+    .calendar-income .calendar-day .income-amount {
+        background: #e6ffe6 !important;
+        color: #28a745 !important;
+        border: 1px solid #c3e6cb !important;
+    }
+    
+    .calendar-investment .calendar-day .investment-amount {
+        background: #fffde6 !important;
+        color: #c8b002 !important;
+        border: 1px solid #ffeaa7 !important;
+    }
+    
+    /* Calendar container spacing */
+    .calendar-section {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 12px;
+        border: 1px solid #e9ecef;
+    }
+    
+    .calendar-section h4 {
+        margin-bottom: 0.8rem !important;
+        color: #495057;
+        font-size: 1.1rem !important;
+    }    
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
@@ -298,26 +332,38 @@ def format_amount(value):
 
 
 
-def create_calendar_view(df, selected_year, selected_month):
-    """Create a mobile-friendly calendar view showing daily expenses"""
+# Updated create_calendar_view function
+def create_calendar_view(df, selected_year, selected_month, category_filter=None, calendar_theme="expense"):
+    """Create a category-filtered calendar view showing daily amounts"""
     import calendar
     
-    # Filter data for selected month/year
+    # Filter data for selected month/year and category
     month_data = df[(df["Date"].dt.year == selected_year) & 
                    (df["Date"].dt.month == selected_month)]
     
+    if category_filter:
+        month_data = month_data[month_data["Category"] == category_filter]
+    
     # Group by date and calculate daily totals
-    daily_summary = month_data.groupby([month_data["Date"].dt.day, "Category"])["Amount (₹)"].sum().reset_index()
-    daily_summary = daily_summary.pivot(index='Date', columns='Category', values='Amount (₹)').fillna(0)
+    daily_summary = month_data.groupby(month_data["Date"].dt.day)["Amount (₹)"].sum()
     
     # Get calendar layout
     cal = calendar.monthcalendar(selected_year, selected_month)
     month_name = calendar.month_name[selected_month]
     
+    # Theme-based styling
+    theme_colors = {
+        "expense": {"bg": "#ffe6e6", "color": "#dc3545", "border": "#f5c6cb"},
+        "income": {"bg": "#e6ffe6", "color": "#28a745", "border": "#c3e6cb"},
+        "investment": {"bg": "#fffde6", "color": "#c8b002", "border": "#ffeaa7"}
+    }
+    
+    theme = theme_colors.get(calendar_theme, theme_colors["expense"])
+    
     # Create HTML calendar
     calendar_html = f"""
     <style>
-    .calendar-container {{
+    .calendar-container-{calendar_theme} {{
         font-family: -apple-system, BlinkMacSystemFont, sans-serif;
         margin: 0 auto;
         max-width: 100%;
@@ -327,120 +373,99 @@ def create_calendar_view(df, selected_year, selected_month):
         overflow: hidden;
     }}
     
-    .calendar-header {{
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    .calendar-header-{calendar_theme} {{
+        background: linear-gradient(135deg, {theme["color"]} 0%, {theme["color"]}dd 100%);
         color: white;
         text-align: center;
-        padding: 1rem;
-        font-size: 1.2rem;
+        padding: 0.8rem;
+        font-size: 0.95rem;
         font-weight: 600;
     }}
     
-    .calendar-grid {{
+    .calendar-grid-{calendar_theme} {{
         display: grid;
         grid-template-columns: repeat(7, 1fr);
         gap: 1px;
         background: #e9ecef;
     }}
     
-    .day-header {{
+    .day-header-{calendar_theme} {{
         background: #f8f9fa;
-        padding: 0.5rem 0.2rem;
+        padding: 0.4rem 0.2rem;
         text-align: center;
         font-weight: 600;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         color: #6c757d;
         border-bottom: 1px solid #dee2e6;
     }}
     
-    .calendar-day {{
+    .calendar-day-{calendar_theme} {{
         background: white;
-        min-height: 80px;
-        padding: 0.3rem;
+        min-height: 70px;
+        padding: 0.25rem;
         display: flex;
         flex-direction: column;
         position: relative;
         border: 1px solid #f0f0f0;
     }}
     
-    .calendar-day.other-month {{
+    .calendar-day-{calendar_theme}.other-month {{
         background: #f8f9fa;
         color: #adb5bd;
     }}
     
-    .calendar-day.today {{
+    .calendar-day-{calendar_theme}.today {{
         background: #fff3cd;
         border: 2px solid #ffc107;
     }}
     
-    .day-number {{
+    .day-number-{calendar_theme} {{
         font-weight: 600;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         margin-bottom: 0.2rem;
         color: #495057;
     }}
     
-    .expense-amount {{
-        font-size: 0.7rem;
+    .amount-{calendar_theme} {{
+        font-size: 0.65rem;
         font-weight: 600;
-        color: #dc3545;
-        background: #ffe6e6;
-        padding: 0.1rem 0.3rem;
-        border-radius: 8px;
-        margin: 0.1rem 0;
+        color: {theme["color"]};
+        background: {theme["bg"]};
+        padding: 0.1rem 0.25rem;
+        border-radius: 6px;
+        margin: 0.05rem 0;
         text-align: center;
-    }}
-    
-    .income-amount {{
-        font-size: 0.7rem;
-        font-weight: 600;
-        color: #28a745;
-        background: #e6ffe6;
-        padding: 0.1rem 0.3rem;
-        border-radius: 8px;
-        margin: 0.1rem 0;
-        text-align: center;
-    }}
-    
-    .investment-amount {{
-        font-size: 0.7rem;
-        font-weight: 600;
-        color: #c8b002;
-        background: #fffde6;
-        padding: 0.1rem 0.3rem;
-        border-radius: 8px;
-        margin: 0.1rem 0;
-        text-align: center;
+        border: 1px solid {theme["border"]};
     }}
     
     @media (max-width: 768px) {{
-        .calendar-day {{
-            min-height: 70px;
+        .calendar-day-{calendar_theme} {{
+            min-height: 60px;
             padding: 0.2rem;
         }}
-        .day-number {{
-            font-size: 0.8rem;
+        .day-number-{calendar_theme} {{
+            font-size: 0.75rem;
         }}
-        .expense-amount, .income-amount, .investment-amount {{
+        .amount-{calendar_theme} {{
             font-size: 0.6rem;
             padding: 0.05rem 0.2rem;
         }}
     }}
     </style>
     
-    <div class="calendar-container">
-        <div class="calendar-header">
-            {month_name} {selected_year}
+    <div class="calendar-container-{calendar_theme}">
+        <div class="calendar-header-{calendar_theme}">
+            {month_name} {selected_year} - Daily {category_filter if category_filter else 'Totals'}
         </div>
-        <div class="calendar-grid">
+        <div class="calendar-grid-{calendar_theme}">
             <!-- Day headers -->
-            <div class="day-header">Sun</div>
-            <div class="day-header">Mon</div>
-            <div class="day-header">Tue</div>
-            <div class="day-header">Wed</div>
-            <div class="day-header">Thu</div>
-            <div class="day-header">Fri</div>
-            <div class="day-header">Sat</div>
+            <div class="day-header-{calendar_theme}">Sun</div>
+            <div class="day-header-{calendar_theme}">Mon</div>
+            <div class="day-header-{calendar_theme}">Tue</div>
+            <div class="day-header-{calendar_theme}">Wed</div>
+            <div class="day-header-{calendar_theme}">Thu</div>
+            <div class="day-header-{calendar_theme}">Fri</div>
+            <div class="day-header-{calendar_theme}">Sat</div>
     """
     
     # Get today's date for highlighting
@@ -451,27 +476,20 @@ def create_calendar_view(df, selected_year, selected_month):
     for week in cal:
         for day in week:
             if day == 0:
-                calendar_html += '<div class="calendar-day other-month"></div>'
+                calendar_html += f'<div class="calendar-day-{calendar_theme} other-month"></div>'
             else:
                 # Check if this is today
                 is_today = is_current_month and day == today.day
                 today_class = " today" if is_today else ""
                 
-                calendar_html += f'<div class="calendar-day{today_class}">'
-                calendar_html += f'<div class="day-number">{day}</div>'
+                calendar_html += f'<div class="calendar-day-{calendar_theme}{today_class}">'
+                calendar_html += f'<div class="day-number-{calendar_theme}">{day}</div>'
                 
-                # Add transaction amounts for this day
+                # Add transaction amount for this day
                 if day in daily_summary.index:
-                    day_data = daily_summary.loc[day]
-                    
-                    if day_data.get('Expense', 0) > 0:
-                        calendar_html += f'<div class="expense-amount">-₹{day_data["Expense"]:,.0f}</div>'
-                    
-                    if day_data.get('Income', 0) > 0:
-                        calendar_html += f'<div class="income-amount">+₹{day_data["Income"]:,.0f}</div>'
-                    
-                    if day_data.get('Investment', 0) > 0:
-                        calendar_html += f'<div class="investment-amount">📈₹{day_data["Investment"]:,.0f}</div>'
+                    amount = daily_summary[day]
+                    if amount > 0:
+                        calendar_html += f'<div class="amount-{calendar_theme}">₹{amount:,.0f}</div>'
                 
                 calendar_html += '</div>'
     
@@ -707,300 +725,136 @@ with tab1:
 # TAB 2: SUMMARY & ANALYTICS
 # -------------------------
 with tab2:
-    # -------------------------
-    # Monthly Summary Cards
-    # -------------------------
-    st.header("📊 Monthly Summary")
+    st.header("📊 Summary & Analytics")
 
     if not df.empty:
-        # Month and Year selection with multi-select option
-        col1, col2, col3 = st.columns(3)
-        
+        # Month and Year selection
+        col1, col2 = st.columns(2)
+
         with col1:
             available_years = sorted(df["Date"].dt.year.unique(), reverse=True)
             default_year = datetime.now().year if datetime.now().year in available_years else available_years[0]
             selected_year = st.selectbox("Year", available_years, index=available_years.index(default_year))
-        
+
         with col2:
-            # Get months available for the selected year
             year_data = df[df["Date"].dt.year == selected_year]
             available_months = sorted(year_data["Date"].dt.month.unique())
             month_names = [(month, datetime(2000, month, 1).strftime('%B')) for month in available_months]
-            
-            # Set default to current month if available
+
             current_month = datetime.now().month
             default_months = [current_month] if current_month in available_months and selected_year == datetime.now().year else [available_months[0]] if available_months else []
-            
+
             selected_month_names = st.multiselect(
                 "Month(s)", 
                 options=[name for _, name in month_names],
                 default=[datetime(2000, month, 1).strftime('%B') for month in default_months],
                 help="Select one or multiple months"
             )
-            
-            # Convert back to month numbers
-            selected_months = [month for month, name in month_names if name in selected_month_names]
-        
-        with col3:
-            st.write("")  # Spacer
-            st.write("")  # Spacer
-            analysis_period = f"{', '.join(selected_month_names)} {selected_year}" if selected_month_names else "No months selected"
-        
+
+        selected_months = [month for month, name in month_names if name in selected_month_names]
+
+        # Initialize filter category from URL if present
+        query_params = st.query_params
+        if 'filter' in query_params:
+            st.session_state.calendar_filter = query_params['filter'][0]
+        elif 'calendar_filter' not in st.session_state:
+            st.session_state.calendar_filter = "All"
+
+
         if selected_months:
-            # Filter for selected months and year
             selected_period_df = df[(df["Date"].dt.month.isin(selected_months)) & (df["Date"].dt.year == selected_year)]
-            
-            # Calculate totals for selected period
+
             total_income = selected_period_df[selected_period_df["Category"] == "Income"]["Amount (₹)"].sum()
             total_expense = selected_period_df[selected_period_df["Category"] == "Expense"]["Amount (₹)"].sum()
             total_investment = selected_period_df[selected_period_df["Category"] == "Investment"]["Amount (₹)"].sum()
             net_savings = total_income - total_expense - total_investment
-            
-            # Display selected period
-            st.subheader(f"📅 {analysis_period}")
-            
-            # Custom grid
-            grid_html = f"""
-            <div class="custom-grid">
-                {create_custom_metric_card("💰 Income", f"₹{total_income:,.0f}", "income")}
-                {create_custom_metric_card("💸 Expense", f"₹{total_expense:,.0f}", "expense")}
-                {create_custom_metric_card("📈 Investment", f"₹{total_investment:,.0f}", "investment")}
-                {create_custom_metric_card("💵 Balance", f"₹{net_savings:,.0f}", "balance")}
-            """
-            st.markdown(grid_html, unsafe_allow_html=True)
+
+            st.markdown("### 📅 Monthly Summary")
+
+            st.markdown(f"""
+            <style>
+            .grid-2x2 {{
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.6rem;
+                margin: 1rem 0;
+            }}
+            .grid-2x2 button {{
+                background: linear-gradient(135deg, #ffffff, #f8f9fa);
+                border: 2px solid #e0e0e0;
+                border-radius: 12px;
+                padding: 1rem;
+                font-size: 1.1rem;
+                font-weight: 600;
+                text-align: center;
+                cursor: pointer;
+                white-space: pre-line;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+                width: 100%;
+                height: 100%;
+                transition: all 0.2s ease-in-out;
+            }}
+            .grid-2x2 button:hover {{
+                transform: scale(1.03);
+                border-color: #999;
+            }}
+            </style>
+
+            <div class="grid-2x2">
+                <button onclick="window.location.search='?filter=Income'">💰 Income\\n₹{total_income:,.0f}</button>
+                <button onclick="window.location.search='?filter=Expense'">💸 Expense\\n₹{total_expense:,.0f}</button>
+                <button onclick="window.location.search='?filter=Investment'">📈 Investment\\n₹{total_investment:,.0f}</button>
+                <button onclick="window.location.search='?filter=All'">💵 Balance\\n₹{net_savings:,.0f}</button>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # Show selected filter
+            active_filter = st.session_state.calendar_filter
+            st.info(f"📌 Showing: **{active_filter}** data for {', '.join(selected_month_names)} {selected_year}")
+
+            # Show calendar
+            cal_month = selected_months[0]
+            calendar_html = create_calendar_view(df, selected_year, cal_month, 
+                                                 category_filter=None if active_filter == "All" else active_filter,
+                                                 calendar_theme=active_filter.lower())
+            st.markdown(calendar_html, unsafe_allow_html=True)
+
+            # Bar Chart
+            filtered_df = selected_period_df if active_filter == "All" else selected_period_df[selected_period_df["Category"] == active_filter]
+            if not filtered_df.empty:
+                chart_df = filtered_df.groupby("Subcategory")["Amount (₹)"].sum().reset_index()
+                chart_df = chart_df.sort_values("Amount (₹)", ascending=False)
+                chart_df["Amount_Label"] = chart_df["Amount (₹)"].apply(lambda x: f"₹{x:,.0f}")
+
+                fig = px.bar(
+                    chart_df,
+                    x="Subcategory",
+                    y="Amount (₹)",
+                    text="Amount_Label",
+                    title=f"{active_filter} Breakdown" if active_filter != "All" else "Overall Breakdown"
+                )
+                fig.update_traces(textposition="outside", marker_color="#28a745" if active_filter == "Income"
+                                  else "#dc3545" if active_filter == "Expense"
+                                  else "#c8b002" if active_filter == "Investment"
+                                  else "#007bff")
+                fig.update_layout(
+                    height=400,
+                    xaxis_tickangle=-45,
+                    yaxis_title=None,
+                    showlegend=False
+                )
+                max_val = chart_df["Amount (₹)"].max()
+                fig.update_yaxes(range=[0, max_val * 1.2])
+
+                st.plotly_chart(fig, use_container_width=True, config={"staticPlot": True})
+            else:
+                st.info(f"No {active_filter.lower()} data available for the selected months.")
+
         else:
-            st.warning("Please select at least one month to view summary")
-            selected_period_df = pd.DataFrame()  # Empty dataframe for charts section
-        
-        # -------------------------
-        # Charts Section (Static Bar charts for all categories)
-        # -------------------------
-        if selected_months and not selected_period_df.empty:
-            st.header("📈 Analytics")
-            
-            # Chart tabs for Income, Expenses, and Investments
-            chart_tab1, chart_tab2, chart_tab3 = st.tabs(["💸 Expenses", "💰 Income", "📈 Investments"])
-
-            with chart_tab1:
-                expense_df = selected_period_df[selected_period_df["Category"] == "Expense"]
-                if not expense_df.empty:
-                    expense_by_subcat = expense_df.groupby("Subcategory")["Amount (₹)"].sum().reset_index()
-                    expense_by_subcat = expense_by_subcat.sort_values("Amount (₹)", ascending=False)
-                    
-                    # Add formatted labels for better readability
-                    expense_by_subcat['Amount_Label'] = expense_by_subcat['Amount (₹)'].apply(format_amount)
-                    
-                    fig_exp = px.bar(expense_by_subcat, 
-                                   x="Subcategory", 
-                                   y="Amount (₹)",
-                                   title="Expense Breakdown",
-                                   text="Amount_Label")
-                    fig_exp.update_layout(
-                        height=400, 
-                        xaxis_tickangle=-45, 
-                        showlegend=False,
-                        # Static image configuration
-                        font=dict(size=12),
-                        title_font_size=16,
-                        yaxis_title=None
-                    )
-                    fig_exp.update_traces(textposition='outside', marker_color='#dc3545')
-                    # Adjust y-axis to accommodate labels
-                    max_value = expense_by_subcat['Amount (₹)'].max()
-                    fig_exp.update_yaxes(range=[0, max_value * 1.2])
-                    
-                    # Display as static image
-                    st.plotly_chart(fig_exp, use_container_width=True, config={'staticPlot': True})
-                    
-                    # Top expenses
-                    st.subheader("🔝 Top Expenses")
-                    for _, row in expense_by_subcat.head(5).iterrows():
-                        st.write(f"**{row['Subcategory']}**: ₹{row['Amount (₹)']:,.0f}")
-                else:
-                    st.info("No expense data for selected period")
-
-            with chart_tab2:
-                income_df = selected_period_df[selected_period_df["Category"] == "Income"]
-                if not income_df.empty:
-                    income_by_subcat = income_df.groupby("Subcategory")["Amount (₹)"].sum().reset_index()
-                    income_by_subcat = income_by_subcat.sort_values("Amount (₹)", ascending=False)
-                    
-                    # Add formatted labels for better readability
-                    income_by_subcat['Amount_Label'] = income_by_subcat['Amount (₹)'].apply(format_amount)
-                    
-                    fig_inc = px.bar(income_by_subcat, 
-                                   x="Subcategory", 
-                                   y="Amount (₹)",
-                                   title="Income Breakdown",
-                                   text="Amount_Label")
-                    fig_inc.update_layout(
-                        height=400, 
-                        xaxis_tickangle=-45, 
-                        showlegend=False,
-                        # Static image configuration
-                        font=dict(size=12),
-                        title_font_size=16,
-                        yaxis_title=None
-                    )
-                    fig_inc.update_traces(textposition='outside', marker_color='#28a745')
-                    # Adjust y-axis to accommodate labels
-                    max_value = income_by_subcat['Amount (₹)'].max()
-                    fig_inc.update_yaxes(range=[0, max_value * 1.2])
-                    
-                    # Display as static image
-                    st.plotly_chart(fig_inc, use_container_width=True, config={'staticPlot': True})
-                    
-                    # Income summary
-                    st.subheader("💰 Income Summary")
-                    for _, row in income_by_subcat.iterrows():
-                        st.write(f"**{row['Subcategory']}**: ₹{row['Amount (₹)']:,.0f}")
-                else:
-                    st.info("No income data for selected period")
-            
-            with chart_tab3:
-                investment_df = selected_period_df[selected_period_df["Category"] == "Investment"]
-                if not investment_df.empty:
-                    investment_by_subcat = investment_df.groupby("Subcategory")["Amount (₹)"].sum().reset_index()
-                    investment_by_subcat = investment_by_subcat.sort_values("Amount (₹)", ascending=False)
-                    
-                    # Add formatted labels for better readability
-                    investment_by_subcat['Amount_Label'] = investment_by_subcat['Amount (₹)'].apply(format_amount)
-                    
-                    fig_inv = px.bar(investment_by_subcat, 
-                                   x="Subcategory", 
-                                   y="Amount (₹)",
-                                   title="Investment Breakdown",
-                                   text="Amount_Label")
-                    fig_inv.update_layout(
-                        height=400, 
-                        xaxis_tickangle=-45, 
-                        showlegend=False,
-                        # Static image configuration
-                        font=dict(size=12),
-                        title_font_size=16,
-                        yaxis_title=None
-                    )
-                    fig_inv.update_traces(textposition='outside', marker_color='#c8b002')
-                    # Adjust y-axis to accommodate labels
-                    max_value = investment_by_subcat['Amount (₹)'].max()
-                    fig_inv.update_yaxes(range=[0, max_value * 1.2])
-                    
-                    # Display as static image
-                    st.plotly_chart(fig_inv, use_container_width=True, config={'staticPlot': True})
-                    
-                    # Investment summary
-                    st.subheader("💼 Investment Summary")
-                    for _, row in investment_by_subcat.iterrows():
-                        st.write(f"**{row['Subcategory']}**: ₹{row['Amount (₹)']:,.0f}")
-                else:
-                    st.info("No investment data for selected period")
-
+            st.warning("Please select at least one month to view analytics.")
     else:
-        # Empty state
-        st.subheader(f"📅 {datetime.now().strftime('%B %Y')}")
-        grid_html = f"""
-        <div class="custom-grid">
-            {create_custom_metric_card("💰 Income", "₹0", "income")}
-            {create_custom_metric_card("💸 Expense", "₹0", "expense")}
-            {create_custom_metric_card("📈 Investment", "₹0", "investment")}
-            {create_custom_metric_card("💵 Balance", "₹0", "balance")}
-        """
-        st.markdown(grid_html, unsafe_allow_html=True)
-        st.info("No transactions recorded yet. Add your first transaction in the 'Add Transaction' tab!")
+        st.info("No data available. Please add a transaction in the first tab.")
 
-
-# -------------------------
-# TAB 3: CALENDAR VIEW
-# -------------------------
-with tab3:
-    st.header("📅 Monthly Calendar")
-    
-    if not df.empty:
-        # Month and Year selection for calendar
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            available_years = sorted(df["Date"].dt.year.unique(), reverse=True)
-            default_year = datetime.now().year if datetime.now().year in available_years else available_years[0]
-            cal_selected_year = st.selectbox("Year", available_years, 
-                                           index=available_years.index(default_year), 
-                                           key="calendar_year")
-        
-        with col2:
-            # Get months available for the selected year
-            year_data = df[df["Date"].dt.year == cal_selected_year]
-            available_months = sorted(year_data["Date"].dt.month.unique())
-            
-            # Set default to current month if available
-            current_month = datetime.now().month
-            default_month = current_month if (current_month in available_months and 
-                                           cal_selected_year == datetime.now().year) else available_months[0]
-            
-            month_options = [(month, calendar.month_name[month]) for month in available_months]
-            selected_month_name = st.selectbox(
-                "Month", 
-                options=[name for _, name in month_options],
-                index=[name for month, name in month_options].index(calendar.month_name[default_month]),
-                key="calendar_month"
-            )
-            
-            # Get the month number
-            cal_selected_month = next(month for month, name in month_options if name == selected_month_name)
-        
-        # Generate and display calendar
-        calendar_html = create_calendar_view(df, cal_selected_year, cal_selected_month)
-        st.markdown(calendar_html, unsafe_allow_html=True)
-        
-        # Add legend
-        st.markdown("""
-        <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
-            <span style="background: #ffe6e6; color: #dc3545; padding: 0.2rem 0.5rem; border-radius: 8px; font-size: 0.8rem;">💸 Expenses</span>
-            <span style="background: #e6ffe6; color: #28a745; padding: 0.2rem 0.5rem; border-radius: 8px; font-size: 0.8rem;">💰 Income</span>
-            <span style="background: #fffde6; color: #c8b002; padding: 0.2rem 0.5rem; border-radius: 8px; font-size: 0.8rem;">📈 Investments</span>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Show monthly summary below calendar
-        st.markdown("---")
-        month_data = df[(df["Date"].dt.year == cal_selected_year) & 
-                       (df["Date"].dt.month == cal_selected_month)]
-        
-        if not month_data.empty:
-            col1, col2, col3 = st.columns(3)
-            
-            total_income = month_data[month_data["Category"] == "Income"]["Amount (₹)"].sum()
-            total_expense = month_data[month_data["Category"] == "Expense"]["Amount (₹)"].sum()
-            total_investment = month_data[month_data["Category"] == "Investment"]["Amount (₹)"].sum()
-            
-            col1.metric("💰 Income", f"₹{total_income:,.0f}")
-            col2.metric("💸 Expenses", f"₹{total_expense:,.0f}")
-            col3.metric("📈 Investments", f"₹{total_investment:,.0f}")
-            
-            # Daily breakdown (expandable)
-            with st.expander("📋 Daily Breakdown"):
-                daily_transactions = month_data.groupby(month_data["Date"].dt.day).agg({
-                    "Amount (₹)": ["count", "sum"],
-                    "Category": lambda x: x.value_counts().to_dict()
-                }).reset_index()
-                
-                for _, row in daily_transactions.iterrows():
-                    day = row["Date"]
-                    count = row[("Amount (₹)", "count")]
-                    total = row[("Amount (₹)", "sum")]
-                    categories = row[("Category", "<lambda>")]
-                    
-                    st.write(f"**Day {day}**: {count} transactions, Total: ₹{total:,.0f}")
-                    category_text = ", ".join([f"{cat}: {cnt}" for cat, cnt in categories.items()])
-                    st.write(f"   ↳ {category_text}")
-        
-    else:
-        st.info("No transactions recorded yet. Add your first transaction to see the calendar view!")
-        
-        # Show empty calendar for current month
-        current_year = datetime.now().year
-        current_month = datetime.now().month
-        empty_calendar = create_calendar_view(pd.DataFrame(), current_year, current_month)
-        st.markdown(empty_calendar, unsafe_allow_html=True)
         
 # Debug section at the bottom
 if DEBUG_MODE:
