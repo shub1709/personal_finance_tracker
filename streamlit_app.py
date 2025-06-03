@@ -86,7 +86,7 @@ custom_css = """
         padding: 0.8rem;
         border-radius: 10px;
         text-align: center;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         min-height: 80px;
         display: flex;
         flex-direction: column;
@@ -106,11 +106,26 @@ custom_css = """
         color: #333;
     }
 
-    .metric-income { background: linear-gradient(135deg, #d4edda, #a8e6a3) !important; }
-    .metric-expense { background: linear-gradient(135deg, #f8d7da, #e57366) !important; }
-    .metric-investment { background: linear-gradient(135deg, #fff3cd, #ffeaa7) !important; }
-    .metric-balance { background: linear-gradient(135deg, #d1ecf1, #a3d5db) !important; }
-
+    .metric-income { 
+        background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 50%, #a7f3d0 100%) !important;
+        border: 0px solid #10b981 !important;
+        box-shadow: 0 2px 10px rgba(16, 185, 129, 0.15) !important;
+    }
+    .metric-expense { 
+        background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 50%, #fecaca 100%) !important;
+        border: 0px solid #ef4444 !important;
+        box-shadow: 0 2px 10px rgba(239, 68, 68, 0.15) !important;
+    }
+    .metric-investment { 
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fde68a 100%) !important;
+        border: 0px solid #f59e0b !important;
+        box-shadow: 0 2px 10px rgba(245, 158, 11, 0.15) !important;
+    }
+    .metric-balance { 
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%, #93c5fd 100%) !important;
+        border: 0px solid #3b82f6 !important;
+        box-shadow: 0 2px 10px rgba(59, 130, 246, 0.15) !important;
+    }
     .recent-entry {
         background: #f8f9fa;
         border: 1px solid #dee2e6;
@@ -582,7 +597,7 @@ if DEBUG_MODE:
     # Show cache info
     st.sidebar.write(f"Last transaction: {st.session_state.last_transaction_time}")
 
-st.title("💸 Finance Tracker")
+st.title("💸 Daily Tracker")
 
 # Load data
 df = load_data()
