@@ -768,18 +768,27 @@ with tab2:
             # Custom CSS to force 2x2 grid on mobile
             st.markdown("""
             <style>
-            @media (max-width: 1200px) {
+            @media (max-width: 768px) {
+                /* Override column wrapper (each row of columns) */
                 div[data-testid="stHorizontalBlock"] {
-                    display: flex !important;
                     flex-wrap: wrap !important;
-                    gap: 2% !important;
-                    justify-content: space-between;
+                    gap: 4% !important; /* Add spacing between columns */
+                    justify-content: space-between !important;
                 }
+            
+                /* Force each column to 48% width */
                 div[data-testid="column"] {
                     flex: 0 0 48% !important;
                     max-width: 48% !important;
                     min-width: 48% !important;
                 }
+            
+                /* Also ensure column children don’t collapse */
+                div[data-testid="column"] > div {
+                    width: 100% !important;
+                }
+            
+                /* Shrink buttons inside columns for mobile */
                 div[data-testid="column"] button {
                     height: 70px !important;
                     font-size: 0.8rem !important;
@@ -788,6 +797,7 @@ with tab2:
             }
             </style>
             """, unsafe_allow_html=True)
+
 
             st.markdown("### 📅 Monthly Summary")
 
