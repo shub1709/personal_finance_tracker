@@ -724,12 +724,6 @@ with tab1:
 # -------------------------
 # TAB 2: SUMMARY & ANALYTICS
 # -------------------------
-# -------------------------
-# TAB 2: SUMMARY & ANALYTICS
-# -------------------------
-# -------------------------
-# TAB 2: SUMMARY & ANALYTICS
-# -------------------------
 with tab2:
     st.header("📊 Summary & Analytics")
 
@@ -767,148 +761,59 @@ with tab2:
             total_investment = selected_period_df[selected_period_df["Category"] == "Investment"]["Amount (₹)"].sum()
             net_savings = total_income - total_expense - total_investment
 
-            st.markdown("### 📅 Monthly Summary")
-
             # Initialize filter if not exists
             if 'calendar_filter' not in st.session_state:
                 st.session_state.calendar_filter = "All"
 
-            # Add CSS Grid styling for 2x2 layout
+            # Custom CSS to force 2x2 grid on mobile
             st.markdown("""
             <style>
-            .metrics-grid {
-                display: grid !important;
-                grid-template-columns: 1fr 1fr !important;
-                gap: 0.5rem !important;
-                margin: 1rem 0 !important;
-                width: 100% !important;
-            }
-            
-            .metric-card-container {
-                position: relative !important;
-            }
-            
-            /* Style the Streamlit buttons to look like metric cards */
-            .metrics-grid .metric-card-container button {
-                width: 100% !important;
-                height: 85px !important;
-                border-radius: 12px !important;
-                border: 2px solid #e0e0e0 !important;
-                background: linear-gradient(135deg, #ffffff, #f8f9fa) !important;
-                font-weight: 600 !important;
-                font-size: 0.9rem !important;
-                transition: all 0.2s ease !important;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.05) !important;
-                white-space: pre-line !important;
-                line-height: 1.3 !important;
-                padding: 0.5rem !important;
-            }
-            
-            /* Hover effects */
-            .metrics-grid .metric-card-container button:hover {
-                transform: scale(1.02) !important;
-                border-color: #999 !important;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
-            }
-            
-            /* Active/pressed state */
-            .metrics-grid .metric-card-container button:active {
-                transform: scale(0.98) !important;
-            }
-            
-            /* Category-specific colors */
-            .metric-income button {
-                background: linear-gradient(135deg, #d4edda, #a8e6a3) !important;
-                color: #155724 !important;
-            }
-            
-            .metric-expense button {
-                background: linear-gradient(135deg, #f8d7da, #e57366) !important;
-                color: #721c24 !important;
-            }
-            
-            .metric-investment button {
-                background: linear-gradient(135deg, #fff3cd, #ffeaa7) !important;
-                color: #856404 !important;
-            }
-            
-            .metric-balance button {
-                background: linear-gradient(135deg, #d1ecf1, #a3d5db) !important;
-                color: #0c5460 !important;
-            }
-            
-            /* Active state styling based on current filter */
-            .metric-active button {
-                border-color: #007bff !important;
-                background: linear-gradient(135deg, #e3f2fd, #bbdefb) !important;
-                box-shadow: 0 4px 12px rgba(0,123,255,0.3) !important;
-            }
-            
-            /* Mobile responsive - maintain 2x2 grid */
             @media (max-width: 768px) {
-                .metrics-grid {
-                    gap: 0.3rem !important;
+                div[data-testid="stHorizontalBlock"] {
+                    display: flex !important;
+                    flex-wrap: wrap !important;
+                    gap: 2% !important;
+                    justify-content: space-between;
                 }
-                
-                .metrics-grid .metric-card-container button {
-                    height: 75px !important;
+                div[data-testid="column"] {
+                    flex: 0 0 48% !important;
+                    max-width: 48% !important;
+                    min-width: 48% !important;
+                }
+                div[data-testid="column"] button {
+                    height: 70px !important;
                     font-size: 0.8rem !important;
-                    padding: 0.4rem !important;
+                    padding: 0.6rem 0.2rem !important;
                 }
-            }
-            
-            /* Hide the default Streamlit column layout for this section */
-            .metrics-grid + div[data-testid="column"] {
-                display: none !important;
             }
             </style>
             """, unsafe_allow_html=True)
 
-            # Create the grid container
-            st.markdown('<div class="metrics-grid">', unsafe_allow_html=True)
-            
-            # Create grid items with Streamlit buttons
-            active_filter = st.session_state.calendar_filter
-            
-            # Income card
-            income_class = "metric-income metric-active" if active_filter == "Income" else "metric-income"
-            st.markdown(f'<div class="metric-card-container {income_class}">', unsafe_allow_html=True)
-            if st.button(f"💰 Income\n₹{total_income:,.0f}", key="income_filter", use_container_width=True):
-                st.session_state.calendar_filter = "Income"
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-            # Expense card
-            expense_class = "metric-expense metric-active" if active_filter == "Expense" else "metric-expense"
-            st.markdown(f'<div class="metric-card-container {expense_class}">', unsafe_allow_html=True)
-            if st.button(f"💸 Expense\n₹{total_expense:,.0f}", key="expense_filter", use_container_width=True):
-                st.session_state.calendar_filter = "Expense"
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-            # Investment card
-            investment_class = "metric-investment metric-active" if active_filter == "Investment" else "metric-investment"
-            st.markdown(f'<div class="metric-card-container {investment_class}">', unsafe_allow_html=True)
-            if st.button(f"📈 Investment\n₹{total_investment:,.0f}", key="investment_filter", use_container_width=True):
-                st.session_state.calendar_filter = "Investment"
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-            # Balance card
-            balance_class = "metric-balance metric-active" if active_filter == "All" else "metric-balance"
-            st.markdown(f'<div class="metric-card-container {balance_class}">', unsafe_allow_html=True)
-            if st.button(f"💵 Balance\n₹{net_savings:,.0f}", key="balance_filter", use_container_width=True):
-                st.session_state.calendar_filter = "All"
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-            # Close the grid container
-            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown("### 📅 Monthly Summary")
+
+            # Row 1
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button(f"💰 Income\n₹{total_income:,.0f}", key="income_filter"):
+                    st.session_state.calendar_filter = "Income"
+            with col2:
+                if st.button(f"💸 Expense\n₹{total_expense:,.0f}", key="expense_filter"):
+                    st.session_state.calendar_filter = "Expense"
+
+            # Row 2
+            col3, col4 = st.columns(2)
+            with col3:
+                if st.button(f"📈 Investment\n₹{total_investment:,.0f}", key="investment_filter"):
+                    st.session_state.calendar_filter = "Investment"
+            with col4:
+                if st.button(f"💵 Balance\n₹{net_savings:,.0f}", key="balance_filter"):
+                    st.session_state.calendar_filter = "All"
 
             # Show selected filter
+            active_filter = st.session_state.calendar_filter
             st.info(f"📌 Showing: **{active_filter}** data for {', '.join(selected_month_names)} {selected_year}")
 
-            # Show calendar
+            # Calendar view (first selected month)
             cal_month = selected_months[0]
             calendar_html = create_calendar_view(df, selected_year, cal_month, 
                                                  category_filter=None if active_filter == "All" else active_filter,
@@ -922,6 +827,7 @@ with tab2:
                 chart_df = chart_df.sort_values("Amount (₹)", ascending=False)
                 chart_df["Amount_Label"] = chart_df["Amount (₹)"].apply(lambda x: f"₹{x:,.0f}")
 
+                import plotly.express as px
                 fig = px.bar(
                     chart_df,
                     x="Subcategory",
@@ -945,11 +851,11 @@ with tab2:
                 st.plotly_chart(fig, use_container_width=True, config={"staticPlot": True})
             else:
                 st.info(f"No {active_filter.lower()} data available for the selected months.")
-
         else:
             st.warning("Please select at least one month to view analytics.")
     else:
         st.info("No data available. Please add a transaction in the first tab.")
+
 
         
 # Debug section at the bottom
