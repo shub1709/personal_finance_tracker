@@ -792,7 +792,7 @@ with tab2:
                 background: linear-gradient(135deg, #e3f2fd, #bbdefb);
             }
             div[data-testid="column"] > div > div > button {
-                width: 100% !important;
+                width: 50% !important;
                 height: 80px !important;
                 border-radius: 12px !important;
                 border: 2px solid #e0e0e0 !important;
