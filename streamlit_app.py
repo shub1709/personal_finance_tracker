@@ -780,26 +780,26 @@ with tab2:
             total_investment = selected_period_df[selected_period_df["Category"] == "Investment"]["Amount (₹)"].sum()
             net_savings = total_income - total_expense - total_investment
 
-            st.markdown("### 📅 Monthly Summary (Tap to view calendar by category)")
+            # 2x2 button grid using Streamlit columns + CSS styling
+            st.markdown("### 📅 Monthly Summary (Tap a card to filter calendar)")
+            
+            grid_rows = [
+                ("💰 Income", f"₹{total_income:,.0f}", "Income", "income"),
+                ("💸 Expense", f"₹{total_expense:,.0f}", "Expense", "expense"),
+                ("📈 Investment", f"₹{total_investment:,.0f}", "Investment", "investment"),
+                ("💵 Balance", f"₹{net_savings:,.0f}", "All", "balance")
+            ]
+            
+            for i in range(0, len(grid_rows), 2):
+                col1, col2 = st.columns(2)
+                
+                for j, col in enumerate((col1, col2)):
+                    if i + j < len(grid_rows):
+                        emoji, amount, category, key = grid_rows[i + j]
+                        button_label = f"{emoji}\n{amount}"
+                        if col.button(button_label, key=f"btn_{key}"):
+                            st.session_state.calendar_view_category = category
 
-            row1_col1, row1_col2 = st.columns(2)
-            row2_col1, row2_col2 = st.columns(2)
-
-            def set_category(cat):
-                st.session_state.calendar_view_category = cat
-
-            with row1_col1:
-                if st.button(f"💰 Income\n₹{total_income:,.0f}", key="btn_income"):
-                    set_category("Income")
-            with row1_col2:
-                if st.button(f"💸 Expense\n₹{total_expense:,.0f}", key="btn_expense"):
-                    set_category("Expense")
-            with row2_col1:
-                if st.button(f"📈 Investment\n₹{total_investment:,.0f}", key="btn_investment"):
-                    set_category("Investment")
-            with row2_col2:
-                if st.button(f"💵 Balance\n₹{net_savings:,.0f}", key="btn_balance"):
-                    set_category("All")
 
             # Render calendar for the first selected month
             cal_month = selected_months[0]
