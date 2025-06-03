@@ -724,6 +724,9 @@ with tab1:
 # -------------------------
 # TAB 2: SUMMARY & ANALYTICS
 # -------------------------
+# -------------------------
+# TAB 2: SUMMARY & ANALYTICS
+# -------------------------
 with tab2:
     st.header("📊 Summary & Analytics")
 
@@ -753,14 +756,6 @@ with tab2:
 
         selected_months = [month for month, name in month_names if name in selected_month_names]
 
-        # Initialize filter category from URL if present
-        query_params = st.query_params
-        if 'filter' in query_params:
-            st.session_state.calendar_filter = query_params['filter'][0]
-        elif 'calendar_filter' not in st.session_state:
-            st.session_state.calendar_filter = "All"
-
-
         if selected_months:
             selected_period_df = df[(df["Date"].dt.month.isin(selected_months)) & (df["Date"].dt.year == selected_year)]
 
@@ -771,42 +766,64 @@ with tab2:
 
             st.markdown("### 📅 Monthly Summary")
 
-            st.markdown(f"""
+            # Initialize filter if not exists
+            if 'calendar_filter' not in st.session_state:
+                st.session_state.calendar_filter = "All"
+
+            # Create 2x2 grid using Streamlit columns with custom styling
+            st.markdown("""
             <style>
-            .grid-2x2 {{
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                gap: 0.6rem;
-                margin: 1rem 0;
-            }}
-            .grid-2x2 button {{
+            .metric-button {
                 background: linear-gradient(135deg, #ffffff, #f8f9fa);
                 border: 2px solid #e0e0e0;
                 border-radius: 12px;
-                padding: 1rem;
-                font-size: 1.1rem;
-                font-weight: 600;
+                padding: 0.8rem;
                 text-align: center;
-                cursor: pointer;
-                white-space: pre-line;
                 box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-                width: 100%;
-                height: 100%;
-                transition: all 0.2s ease-in-out;
-            }}
-            .grid-2x2 button:hover {{
-                transform: scale(1.03);
+                margin-bottom: 0.5rem;
+                transition: all 0.2s ease;
+            }
+            .metric-button:hover {
+                transform: scale(1.02);
                 border-color: #999;
-            }}
+            }
+            .metric-button.active {
+                border-color: #007bff;
+                background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            }
+            div[data-testid="column"] > div > div > button {
+                width: 100% !important;
+                height: 80px !important;
+                border-radius: 12px !important;
+                border: 2px solid #e0e0e0 !important;
+                background: linear-gradient(135deg, #ffffff, #f8f9fa) !important;
+                font-weight: 600 !important;
+                transition: all 0.2s ease !important;
+            }
+            div[data-testid="column"] > div > div > button:hover {
+                transform: scale(1.02) !important;
+                border-color: #999 !important;
+            }
             </style>
-
-            <div class="grid-2x2">
-                <button onclick="window.location.search='?filter=Income'">💰 Income\\n₹{total_income:,.0f}</button>
-                <button onclick="window.location.search='?filter=Expense'">💸 Expense\\n₹{total_expense:,.0f}</button>
-                <button onclick="window.location.search='?filter=Investment'">📈 Investment\\n₹{total_investment:,.0f}</button>
-                <button onclick="window.location.search='?filter=All'">💵 Balance\\n₹{net_savings:,.0f}</button>
-            </div>
             """, unsafe_allow_html=True)
+
+            # Row 1
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button(f"💰 Income\n₹{total_income:,.0f}", key="income_filter", use_container_width=True):
+                    st.session_state.calendar_filter = "Income"
+            with col2:
+                if st.button(f"💸 Expense\n₹{total_expense:,.0f}", key="expense_filter", use_container_width=True):
+                    st.session_state.calendar_filter = "Expense"
+
+            # Row 2
+            col3, col4 = st.columns(2)
+            with col3:
+                if st.button(f"📈 Investment\n₹{total_investment:,.0f}", key="investment_filter", use_container_width=True):
+                    st.session_state.calendar_filter = "Investment"
+            with col4:
+                if st.button(f"💵 Balance\n₹{net_savings:,.0f}", key="balance_filter", use_container_width=True):
+                    st.session_state.calendar_filter = "All"
 
             # Show selected filter
             active_filter = st.session_state.calendar_filter
