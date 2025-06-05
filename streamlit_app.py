@@ -22,15 +22,6 @@ st.set_page_config(
     }
 )
 
-st.markdown("""
-<style>
-    /* Force light mode regardless of system preference */
-    @media (prefers-color-scheme: dark) {
-        .stApp {
-            background-color: white !important;
-            color: black !important;
-        }
-    }
 
 /* Hide Streamlit UI elements */
 #MainMenu, footer, header, [data-testid="stToolbarActions"] {
