@@ -214,7 +214,39 @@ custom_css = """
         font-size: 0.95rem !important;
         font-weight: 700 !important;  /* Bold */
     }
-
+    
+    /* Force light mode - add this to your existing <style> section */
+    :root {
+        color-scheme: light !important;
+    }
+    
+    /* Override any dark mode styles */
+    .stApp {
+        background-color: white !important;
+        color: black !important;
+    }
+    
+    /* Ensure all containers stay light */
+    .main .block-container {
+        background-color: white !important;
+        color: black !important;
+    }
+    
+    /* Override any dark mode inputs */
+    .stSelectbox > div > div, 
+    .stTextInput > div > div > input,
+    .stNumberInput > div > div > input,
+    .stDateInput > div > div > input {
+        background-color: white !important;
+        color: black !important;
+    }
+    
+    /* Override dark mode buttons */
+    .stButton > button {
+        background-color: white !important;
+        color: black !important;
+        border: 1px solid #ccc !important;
+    }
 
 </style>
 """
