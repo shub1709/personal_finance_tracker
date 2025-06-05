@@ -855,6 +855,7 @@ with tab2:
             total_income = selected_period_df[selected_period_df["Category"] == "Income"]["Amount (₹)"].sum()
             total_expense = selected_period_df[selected_period_df["Category"] == "Expense"]["Amount (₹)"].sum()
             total_investment = selected_period_df[selected_period_df["Category"] == "Investment"]["Amount (₹)"].sum()
+            total_investment_alltime = df[df["Category"] == "Investment"]["Amount (₹)"].sum()
             net_savings = total_income - total_expense - total_investment
             
             # Display selected period
@@ -864,7 +865,7 @@ with tab2:
             grid_html = f"""
             <div class="custom-grid">
                 {create_custom_metric_card("💸 Expense", f"₹{total_expense:,.0f}", "expense")}
-                {create_custom_metric_card("📈 Investment", f"₹{total_investment:,.0f}", "investment")}                
+                {create_custom_metric_card("📈 Investment", f"₹{total_investment:,.0f}<br><small style='font-size: 0.7rem; color: #666;'>Total: ₹{total_investment_alltime:,.0f}</small>", "investment")}            
                 {create_custom_metric_card("💰 Income", f"₹{total_income:,.0f}", "income")}
                 
                 
