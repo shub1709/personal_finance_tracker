@@ -9,20 +9,11 @@ from google.oauth2.service_account import Credentials
 import calendar
 import openpyxl
 
-# Force light theme
-st.set_page_config(
-    page_title="💰 Finance Tracker", 
-    layout="centered", 
-    initial_sidebar_state="collapsed",
-    # Add these theme settings
-    menu_items={
-        'Get Help': None,
-        'Report a bug': None,
-        'About': None
-    }
-)
+# MUST BE FIRST - Set page config
+st.set_page_config(page_title="💰 Finance Tracker", layout="centered", initial_sidebar_state="collapsed")
 
-
+st.markdown("""
+<style>
 /* Hide Streamlit UI elements */
 #MainMenu, footer, header, [data-testid="stToolbarActions"] {
     visibility: hidden !important;
@@ -223,7 +214,8 @@ custom_css = """
         font-size: 0.95rem !important;
         font-weight: 700 !important;  /* Bold */
     }
-    
+
+
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
