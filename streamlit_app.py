@@ -7,6 +7,7 @@ import plotly.graph_objects as go
 import json
 from google.oauth2.service_account import Credentials
 import calendar
+import openpyxl
 
 # MUST BE FIRST - Set page config
 st.set_page_config(page_title="💰 Finance Tracker", layout="centered", initial_sidebar_state="collapsed")
@@ -777,6 +778,32 @@ with tab1:
             </div>
             """, unsafe_allow_html=True)
 
+
+    # Download section
+    st.markdown("---")
+    # st.subheader("📥 Download Data")
+
+    if not df.empty:
+        # Convert datetime to string for Excel compatibility
+        df_download = df.copy()
+        df_download["Date"] = df_download["Date"].dt.strftime("%Y-%m-%d")
+        
+        # Convert to Excel bytes
+        from io import BytesIO
+        excel_buffer = BytesIO()
+        df_download.to_excel(excel_buffer, index=False, sheet_name="Finance_Data")
+        excel_buffer.seek(0)
+        
+        # Download button
+        st.download_button(
+            label="📊 Download as Excel",
+            data=excel_buffer.getvalue(),
+            file_name=f"finance_tracker_{datetime.now().strftime('%Y%m%d')}.xlsx",
+            mime="application/vnd.openxlsx",
+            use_container_width=True
+        )
+    else:
+        st.info("No data available to download")
 # -------------------------
 # TAB 2: SUMMARY & ANALYTICS
 # -------------------------
