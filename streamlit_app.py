@@ -75,7 +75,7 @@ custom_css = """
     /* Custom grid layout for metrics */
     .custom-grid {
         display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
+        grid-template-columns: 1fr 1fr 1fr !important;
         gap: 0.5rem !important;
         margin: 1rem 0 !important;
     }
@@ -836,10 +836,11 @@ with tab2:
             # Custom grid
             grid_html = f"""
             <div class="custom-grid">
-                {create_custom_metric_card("💰 Income", f"₹{total_income:,.0f}", "income")}
                 {create_custom_metric_card("💸 Expense", f"₹{total_expense:,.0f}", "expense")}
-                {create_custom_metric_card("📈 Investment", f"₹{total_investment:,.0f}", "investment")}
-                {create_custom_metric_card("💵 Balance", f"₹{net_savings:,.0f}", "balance")}
+                {create_custom_metric_card("📈 Investment", f"₹{total_investment:,.0f}", "investment")}                
+                {create_custom_metric_card("💰 Income", f"₹{total_income:,.0f}", "income")}
+                
+                
             """
             st.markdown(grid_html, unsafe_allow_html=True)
         else:
@@ -861,7 +862,7 @@ with tab2:
                 st.info(f"📅 Calendar shows daily breakdown for {datetime(2000, calendar_month, 1).strftime('%B')} {calendar_year} (first selected month)")
             
             # Chart tabs for Income, Expenses, and Investments
-            chart_tab1, chart_tab2, chart_tab3 = st.tabs(["💸 Expenses", "💰 Income", "📈 Investments"])
+            chart_tab1, chart_tab2, chart_tab3 = st.tabs(["💸 Expenses", "📈 Investments", "💰 Income"])
 
             with chart_tab1:
                 expense_df = selected_period_df[selected_period_df["Category"] == "Expense"]
@@ -959,7 +960,104 @@ with tab2:
                 else:
                     st.info("No expense data for selected period")
 
+            
             with chart_tab2:
+                investment_df = selected_period_df[selected_period_df["Category"] == "Investment"]
+                if not investment_df.empty:
+                    # Calendar View for Investments
+                    # st.markdown('<div class="calendar-section">', unsafe_allow_html=True)
+                    # st.markdown("#### 📅 Daily Investment Calendar")
+                    
+                    if calendar_month:
+                        calendar_html = create_calendar_view(df, calendar_year, calendar_month, "Investment", "investment")
+                        st.markdown(calendar_html, unsafe_allow_html=True)
+                    
+                    # st.markdown('</div>', unsafe_allow_html=True)
+                    
+                    # Bar Chart for Investments
+                    # st.markdown("#### 📊 Investment Breakdown by Category")
+                    investment_by_subcat = investment_df.groupby("Subcategory")["Amount (₹)"].sum().reset_index()
+                    investment_by_subcat = investment_by_subcat.sort_values("Amount (₹)", ascending=False)
+                    
+                    # Add formatted labels for better readability
+                    investment_by_subcat['Amount_Label'] = investment_by_subcat['Amount (₹)'].apply(format_amount)
+                    
+                    fig_inv = px.bar(investment_by_subcat, 
+                                   x="Subcategory", 
+                                   y="Amount (₹)",
+                                   title="Investment Breakdown",
+                                   text="Amount_Label")
+                    fig_inv.update_layout(
+                        height=400, 
+                        xaxis_tickangle=-45, 
+                        showlegend=False,
+                        font=dict(size=12),
+                        title_font_size=16,
+                        title_x=0.4,
+                        yaxis_title=None
+                    )
+                    fig_inv.update_traces(textposition='outside', marker_color='#c8b002')
+                    # Adjust y-axis to accommodate labels
+                    max_value = investment_by_subcat['Amount (₹)'].max()
+                    fig_inv.update_yaxes(range=[0, max_value * 1.2])
+                    
+                    st.plotly_chart(fig_inv, use_container_width=True, config={'staticPlot': True})
+
+                    # Monthly trend line chart
+                    trend_exp = get_monthly_trend(df, "Investment", months=6)
+                    trend_exp["Amount_Label"] = trend_exp["Amount (₹)"].apply(format_amount)
+
+                    if not trend_exp.empty:
+                        # st.markdown("6 Months Trend")
+                        fig_line_exp = px.line(
+                            trend_exp,
+                            x="YearMonth",
+                            y="Amount (₹)",
+                            text="Amount_Label",  # 👈 Use your formatted labels
+                            markers=True,
+                            line_shape="linear",
+                            title="6 Months Trend"
+                        )
+
+                        fig_line_exp.update_traces(
+                            line_color='#c8b002',
+                            textposition="top center"
+                        )
+
+                        fig_line_exp.update_layout(
+                            yaxis_title="Amount (₹)",
+                            xaxis_title="Month",
+                            font=dict(size=12),
+                            height=300,
+                            title_font_size=16,
+                            title_x=0.42,
+                            xaxis_type='category',
+                            margin=dict(t=80)
+                        )
+
+                        # Generate custom y-axis tick labels
+                        y_max = trend_exp["Amount (₹)"].max()
+                        y_pad = y_max * 0.2  # 20% padding
+                        fig_line_exp.update_yaxes(range=[0, y_max + y_pad])
+                        tick_step = y_max / 5  # Or use a fixed step like 50000
+                        tick_vals = [round(i) for i in list(range(0, int(y_max * 1.1), int(tick_step)))]
+
+                        fig_line_exp.update_yaxes(
+                            range=[0, y_max + y_max * 0.2],
+                            tickvals=tick_vals,
+                            ticktext=[format_amount(v) for v in tick_vals]
+                        )
+
+                        st.plotly_chart(fig_line_exp, use_container_width=True, config={'staticPlot': True})
+                    
+                    # Investment summary
+                    # st.subheader("💼 Investment Summary")
+                    # for _, row in investment_by_subcat.iterrows():
+                    #     st.write(f"**{row['Subcategory']}**: ₹{row['Amount (₹)']:,.0f}")
+                else:
+                    st.info("No investment data for selected period")
+
+            with chart_tab3:
                 income_df = selected_period_df[selected_period_df["Category"] == "Income"]
                 if not income_df.empty:
                     # Calendar View for Income
@@ -1057,102 +1155,6 @@ with tab2:
                     #     st.write(f"**{row['Subcategory']}**: ₹{row['Amount (₹)']:,.0f}")
                 else:
                     st.info("No income data for selected period")
-            
-            with chart_tab3:
-                investment_df = selected_period_df[selected_period_df["Category"] == "Investment"]
-                if not investment_df.empty:
-                    # Calendar View for Investments
-                    # st.markdown('<div class="calendar-section">', unsafe_allow_html=True)
-                    # st.markdown("#### 📅 Daily Investment Calendar")
-                    
-                    if calendar_month:
-                        calendar_html = create_calendar_view(df, calendar_year, calendar_month, "Investment", "investment")
-                        st.markdown(calendar_html, unsafe_allow_html=True)
-                    
-                    # st.markdown('</div>', unsafe_allow_html=True)
-                    
-                    # Bar Chart for Investments
-                    # st.markdown("#### 📊 Investment Breakdown by Category")
-                    investment_by_subcat = investment_df.groupby("Subcategory")["Amount (₹)"].sum().reset_index()
-                    investment_by_subcat = investment_by_subcat.sort_values("Amount (₹)", ascending=False)
-                    
-                    # Add formatted labels for better readability
-                    investment_by_subcat['Amount_Label'] = investment_by_subcat['Amount (₹)'].apply(format_amount)
-                    
-                    fig_inv = px.bar(investment_by_subcat, 
-                                   x="Subcategory", 
-                                   y="Amount (₹)",
-                                   title="Investment Breakdown",
-                                   text="Amount_Label")
-                    fig_inv.update_layout(
-                        height=400, 
-                        xaxis_tickangle=-45, 
-                        showlegend=False,
-                        font=dict(size=12),
-                        title_font_size=16,
-                        title_x=0.4,
-                        yaxis_title=None
-                    )
-                    fig_inv.update_traces(textposition='outside', marker_color='#c8b002')
-                    # Adjust y-axis to accommodate labels
-                    max_value = investment_by_subcat['Amount (₹)'].max()
-                    fig_inv.update_yaxes(range=[0, max_value * 1.2])
-                    
-                    st.plotly_chart(fig_inv, use_container_width=True, config={'staticPlot': True})
-
-                    # Monthly trend line chart
-                    trend_exp = get_monthly_trend(df, "Investment", months=6)
-                    trend_exp["Amount_Label"] = trend_exp["Amount (₹)"].apply(format_amount)
-
-                    if not trend_exp.empty:
-                        # st.markdown("6 Months Trend")
-                        fig_line_exp = px.line(
-                            trend_exp,
-                            x="YearMonth",
-                            y="Amount (₹)",
-                            text="Amount_Label",  # 👈 Use your formatted labels
-                            markers=True,
-                            line_shape="linear",
-                            title="6 Months Trend"
-                        )
-
-                        fig_line_exp.update_traces(
-                            line_color='#c8b002',
-                            textposition="top center"
-                        )
-
-                        fig_line_exp.update_layout(
-                            yaxis_title="Amount (₹)",
-                            xaxis_title="Month",
-                            font=dict(size=12),
-                            height=300,
-                            title_font_size=16,
-                            title_x=0.42,
-                            xaxis_type='category',
-                            margin=dict(t=80)
-                        )
-
-                        # Generate custom y-axis tick labels
-                        y_max = trend_exp["Amount (₹)"].max()
-                        y_pad = y_max * 0.2  # 20% padding
-                        fig_line_exp.update_yaxes(range=[0, y_max + y_pad])
-                        tick_step = y_max / 5  # Or use a fixed step like 50000
-                        tick_vals = [round(i) for i in list(range(0, int(y_max * 1.1), int(tick_step)))]
-
-                        fig_line_exp.update_yaxes(
-                            range=[0, y_max + y_max * 0.2],
-                            tickvals=tick_vals,
-                            ticktext=[format_amount(v) for v in tick_vals]
-                        )
-
-                        st.plotly_chart(fig_line_exp, use_container_width=True, config={'staticPlot': True})
-                    
-                    # Investment summary
-                    # st.subheader("💼 Investment Summary")
-                    # for _, row in investment_by_subcat.iterrows():
-                    #     st.write(f"**{row['Subcategory']}**: ₹{row['Amount (₹)']:,.0f}")
-                else:
-                    st.info("No investment data for selected period")
 
     else:
         # Empty state
