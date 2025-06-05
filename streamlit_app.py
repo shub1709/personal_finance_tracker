@@ -384,8 +384,8 @@ def create_calendar_view(df, selected_year, selected_month, category_filter=None
     
     # Theme-based styling
     theme_colors = {
-        "expense": {"bg": "#ffe6e6", "color": "#dc3545", "border": "#f5c6cb"},
-        "income": {"bg": "#e6ffe6", "color": "#28a745", "border": "#c3e6cb"},
+        "expense": {"color": "#dc3545", "border": "#f5c6cb"},
+        "income": {"color": "#28a745", "border": "#c3e6cb"},
         "investment": {"bg": "#fffde6", "color": "#c8b002", "border": "#ffeaa7"}
     }
     
