@@ -214,7 +214,22 @@ custom_css = """
         font-size: 0.95rem !important;
         font-weight: 700 !important;  /* Bold */
     }
+    
+/* Force light mode for all text elements */
+.recent-entry, .recent-entry * {
+    background: #f8f9fa !important;
+    color: #333 !important;
+    border-color: #dee2e6 !important;
+}
 
+.entry-date, .entry-category, .entry-amount {
+    color: inherit !important;
+}
+
+/* Ensure small text is visible */
+.recent-entry small {
+    color: #6c757d !important;
+}
 
 </style>
 """
