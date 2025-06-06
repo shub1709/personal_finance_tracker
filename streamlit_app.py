@@ -925,7 +925,7 @@ with tab1:
 
                 if not duplicate.empty:
                     st.error(f"❌ Leave already recorded for {subcategory} on {selected_date.strftime('%d %b %Y')}")
-                    st.stop()
+                    # st.stop()
                     time.sleep(3)
                     st.rerun()
 
