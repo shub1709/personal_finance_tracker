@@ -1466,12 +1466,12 @@ with tab3:
         st.markdown(Leave_calendar_html, unsafe_allow_html=True)
         
         # Add legend
-        st.markdown("""
-        <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
-            <span style="background: #fce4ec; color: #e91e63; padding: 0.2rem 0.5rem; border-radius: 8px; font-size: 0.8rem; border: 1px solid #f8bbd9;">👩‍🍳 Maid Leave</span>
-            <span style="background: #e3f2fd; color: #2196f3; padding: 0.2rem 0.5rem; border-radius: 8px; font-size: 0.8rem; border: 1px solid #bbdefb;">👨‍🍳 Cook Leave</span>
-        </div>
-        """, unsafe_allow_html=True)
+        # st.markdown("""
+        # <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
+        #     <span style="background: #fce4ec; color: #e91e63; padding: 0.2rem 0.5rem; border-radius: 8px; font-size: 0.8rem; border: 1px solid #f8bbd9;">👩‍🍳 Maid Leave</span>
+        #     <span style="background: #e3f2fd; color: #2196f3; padding: 0.2rem 0.5rem; border-radius: 8px; font-size: 0.8rem; border: 1px solid #bbdefb;">👨‍🍳 Cook Leave</span>
+        # </div>
+        # """, unsafe_allow_html=True)
         
         # Show recent Leave
         # if not Leave_data.empty:
