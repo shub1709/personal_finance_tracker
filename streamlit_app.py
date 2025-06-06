@@ -8,6 +8,7 @@ import json
 from google.oauth2.service_account import Credentials
 import calendar
 import openpyxl
+import time
 
 # MUST BE FIRST - Set page config
 st.set_page_config(page_title="💰 Finance Tracker", layout="centered", initial_sidebar_state="collapsed")
