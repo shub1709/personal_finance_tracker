@@ -390,7 +390,9 @@ def create_calendar_view(df, selected_year, selected_month, category_filter=None
     
     # Group by date and calculate daily totals
     daily_summary = month_data.groupby(month_data["Date"].dt.day)["Amount (₹)"].sum()
-    
+
+    calendar.setfirstweekday(calendar.SUNDAY)
+
     # Get calendar layout
     cal = calendar.monthcalendar(selected_year, selected_month)
     month_name = calendar.month_name[selected_month]
@@ -503,13 +505,13 @@ def create_calendar_view(df, selected_year, selected_month, category_filter=None
         </div>
         <div class="calendar-grid-{calendar_theme}">
             <!-- Day headers -->
+            <div class="day-header-{calendar_theme}">Sun</div>
             <div class="day-header-{calendar_theme}">Mon</div>
             <div class="day-header-{calendar_theme}">Tue</div>
             <div class="day-header-{calendar_theme}">Wed</div>
             <div class="day-header-{calendar_theme}">Thu</div>
             <div class="day-header-{calendar_theme}">Fri</div>
             <div class="day-header-{calendar_theme}">Sat</div>
-            <div class="day-header-{calendar_theme}">Sun</div>
     """
     
     # Get today's date for highlighting
@@ -563,6 +565,8 @@ def create_Leave_calendar_view(df, selected_year, selected_month):
         if day not in daily_Leave:
             daily_Leave[day] = []
         daily_Leave[day].append(person)
+
+    calendar.setfirstweekday(calendar.SUNDAY)
     
     # Get calendar layout
     cal = calendar.monthcalendar(selected_year, selected_month)
@@ -677,13 +681,13 @@ def create_Leave_calendar_view(df, selected_year, selected_month):
         </div>
         <div class="Leave-calendar-grid">
             <!-- Day headers -->
+            <div class="Leave-day-header">Sun</div>
             <div class="Leave-day-header">Mon</div>
             <div class="Leave-day-header">Tue</div>
             <div class="Leave-day-header">Wed</div>
             <div class="Leave-day-header">Thu</div>
             <div class="Leave-day-header">Fri</div>
             <div class="Leave-day-header">Sat</div>
-            <div class="Leave-day-header">Sun</div>
     """
     
     # Get today's date for highlighting
