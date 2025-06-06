@@ -202,17 +202,28 @@ custom_css = """
     }
 
     /* Evenly distribute tabs horizontally */
+    /* Distribute tab names evenly */
     .stTabs [data-baseweb="tab-list"] {
         display: flex !important;
         justify-content: space-evenly !important;
     }
 
+    /* Style individual tab items */
     .stTabs [data-baseweb="tab"] {
         flex-grow: 1 !important;
         text-align: center !important;
-        padding: 0.5rem 0.25rem !important;
+        font-weight: 700 !important;
         font-size: 0.95rem !important;
-        font-weight: 700 !important;  /* Bold */
+        padding: 0.75rem 0.25rem !important;
+    }
+
+
+    /* Custom grid layout for leave */
+    .leave-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0.5rem !important;
+        margin: 1rem 0 !important;
     }
 
 
@@ -1106,7 +1117,7 @@ with tab2:
                         xaxis_tickangle=-45, 
                         showlegend=False,
                         font=dict(size=12),
-                        title_x=0.4,
+                        title_x=0.3,
                         title_font_size=16,
                         yaxis_title=None
                     )
@@ -1144,7 +1155,7 @@ with tab2:
                             font=dict(size=12),
                             height=300,
                             title_font_size=16,
-                            title_x=0.42,
+                            title_x=0.32,
                             xaxis_type='category',
                             margin=dict(t=80)
                         )
@@ -1204,7 +1215,7 @@ with tab2:
                         showlegend=False,
                         font=dict(size=12),
                         title_font_size=16,
-                        title_x=0.4,
+                        title_x=0.3,
                         yaxis_title=None
                     )
                     fig_inv.update_traces(textposition='outside', marker_color='#c8b002')
@@ -1241,7 +1252,7 @@ with tab2:
                             font=dict(size=12),
                             height=300,
                             title_font_size=16,
-                            title_x=0.42,
+                            title_x=0.32,
                             xaxis_type='category',
                             margin=dict(t=80)
                         )
@@ -1300,7 +1311,7 @@ with tab2:
                         showlegend=False,
                         font=dict(size=12),
                         title_font_size=16,
-                        title_x=0.4,
+                        title_x=0.3,
                         yaxis_title=None
                     )
                     fig_inc.update_traces(textposition='outside', marker_color='#28a745')
@@ -1338,7 +1349,7 @@ with tab2:
                             font=dict(size=12),
                             height=300,
                             title_font_size=16,
-                            title_x=0.42,
+                            title_x=0.32,
                             xaxis_type='category',
                             margin=dict(t=80)
                         )
@@ -1435,7 +1446,7 @@ with tab3:
         
         # Custom grid for Leave summary
         Leave_grid_html = f"""
-            <div class="custom-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; width: 100%; margin: 1rem 0;">
+            <div class="leave-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; width: 100%; margin: 1rem 0;">
                 <div class="custom-metric" style="background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 50%, #f48fb1 100%);
                     border: 0px solid #e91e63; box-shadow: 0 2px 10px rgba(233, 30, 99, 0.15);">
                     <div class="metric-label">👩‍🍳 Maid Leaves</div>
@@ -1488,7 +1499,7 @@ with tab3:
         # Empty summary cards
         Leave_grid_html = f"""
         
-        <div class="custom-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; width: 100%; margin: 1rem 0;">
+        <div class="leave-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; width: 100%; margin: 1rem 0;">
             <div class="custom-metric" style="background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 50%, #f48fb1 100%); border: 0px solid #e91e63; box-shadow: 0 2px 10px rgba(233, 30, 99, 0.15);">
                 <div class="metric-label">👩‍🍳 Maid Leave</div>
                 <div class="metric-value">0 days</div>
