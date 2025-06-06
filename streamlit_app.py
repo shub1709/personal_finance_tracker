@@ -273,7 +273,8 @@ SUBCATEGORIES = {
     "Income": ["Salary", "Freelancing", "Business Income", "Rental Income", "Interest/Dividends", "Bonus", "Gift", "Other Income"],
     "Expense": ["Food & Dining", "Groceries", "Transportation", "Utilities", "Rent/EMI", "Healthcare", "Entertainment", "Shopping", "Education", "Insurance", "Travel", "Personal Care", "Other Expense"],
     "Investment": ["Mutual Funds", "Stocks", "Fixed Deposits", "PPF", "EPF", "Gold", "Real Estate", "Crypto", "Bonds", "Other Investment"],
-    "Other": ["Transfer", "Loan Given", "Loan Received", "Tax Payment", "Miscellaneous"]
+    "Other": ["Transfer", "Loan Given", "Loan Received", "Tax Payment", "Miscellaneous"],
+    "Leave": ["Maid", "Cook"]
 }
 
 # Custom metric component
@@ -533,6 +534,181 @@ def create_calendar_view(df, selected_year, selected_month, category_filter=None
     return calendar_html
 
 
+def create_Leave_calendar_view(df, selected_year, selected_month):
+    """Create a calendar view showing Leave for both maid and cook"""
+    import calendar
+    
+    # Filter data for selected month/year and Leave category
+    month_data = df[(df["Date"].dt.year == selected_year) & 
+                   (df["Date"].dt.month == selected_month) & 
+                   (df["Category"] == "Leave")]
+    
+    # Group by date and person
+    daily_Leave = {}
+    for _, row in month_data.iterrows():
+        day = row["Date"].day
+        person = row["Subcategory"]
+        if day not in daily_Leave:
+            daily_Leave[day] = []
+        daily_Leave[day].append(person)
+    
+    # Get calendar layout
+    cal = calendar.monthcalendar(selected_year, selected_month)
+    month_name = calendar.month_name[selected_month]
+    
+    # Create HTML calendar
+    calendar_html = f"""
+    <style>
+    .Leave-calendar-container {{
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        margin: 0 auto;
+        max-width: 100%;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }}
+    
+    .Leave-calendar-header {{
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
+        text-align: center;
+        padding: 0.8rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+    }}
+    
+    .Leave-calendar-grid {{
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+        background: #e9ecef;
+    }}
+    
+    .Leave-day-header {{
+        background: #f8f9fa;
+        padding: 0.4rem 0.2rem;
+        text-align: center;
+        font-weight: 600;
+        font-size: 0.75rem;
+        color: #6c757d;
+        border-bottom: 1px solid #dee2e6;
+    }}
+    
+    .Leave-calendar-day {{
+        background: white;
+        min-height: 70px;
+        padding: 0.25rem;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        border: 1px solid #f0f0f0;
+    }}
+    
+    .Leave-calendar-day.other-month {{
+        background: #f8f9fa;
+        color: #adb5bd;
+    }}
+    
+    .Leave-calendar-day.today {{
+        background: #fff3cd;
+        border: 2px solid #ffc107;
+    }}
+    
+    .Leave-day-number {{
+        font-weight: 600;
+        font-size: 0.85rem;
+        margin-bottom: 0.2rem;
+        color: #495057;
+    }}
+    
+    .leave-indicator {{
+        font-size: 0.6rem;
+        font-weight: 600;
+        padding: 0.1rem 0.25rem;
+        border-radius: 6px;
+        margin: 0.05rem 0;
+        text-align: center;
+        border: 1px solid;
+    }}
+    
+    .leave-maid {{
+        background: #fce4ec;
+        color: #e91e63;
+        border-color: #f8bbd9;
+    }}
+    
+    .leave-cook {{
+        background: #e3f2fd;
+        color: #2196f3;
+        border-color: #bbdefb;
+    }}
+    
+    @media (max-width: 768px) {{
+        .Leave-calendar-day {{
+            min-height: 60px;
+            padding: 0.2rem;
+        }}
+        .Leave-day-number {{
+            font-size: 0.75rem;
+        }}
+        .leave-indicator {{
+            font-size: 0.55rem;
+            padding: 0.05rem 0.2rem;
+        }}
+    }}
+    </style>
+    
+    <div class="Leave-calendar-container">
+        <div class="Leave-calendar-header">
+            {month_name} {selected_year} - Leave Calendar
+        </div>
+        <div class="Leave-calendar-grid">
+            <!-- Day headers -->
+            <div class="Leave-day-header">Mon</div>
+            <div class="Leave-day-header">Tue</div>
+            <div class="Leave-day-header">Wed</div>
+            <div class="Leave-day-header">Thu</div>
+            <div class="Leave-day-header">Fri</div>
+            <div class="Leave-day-header">Sat</div>
+            <div class="Leave-day-header">Sun</div>
+    """
+    
+    # Get today's date for highlighting
+    today = datetime.today()
+    is_current_month = (today.year == selected_year and today.month == selected_month)
+    
+    # Generate calendar days
+    for week in cal:
+        for day in week:
+            if day == 0:
+                calendar_html += f'<div class="Leave-calendar-day other-month"></div>'
+            else:
+                # Check if this is today
+                is_today = is_current_month and day == today.day
+                today_class = " today" if is_today else ""
+                
+                calendar_html += f'<div class="Leave-calendar-day{today_class}">'
+                calendar_html += f'<div class="Leave-day-number">{day}</div>'
+                
+                # Add leave indicators for this day
+                if day in daily_Leave:
+                    for person in daily_Leave[day]:
+                        if person == "Maid":
+                            calendar_html += f'<div class="leave-indicator leave-maid">Maid</div>'
+                        elif person == "Cook":
+                            calendar_html += f'<div class="leave-indicator leave-cook">Cook</div>'
+
+                calendar_html += '</div>'
+    
+    calendar_html += """
+        </div>
+    </div>
+    """
+    
+    return calendar_html
+
+
 def get_monthly_trend(df, category, months=6):
     today = datetime.today()
     start_month = today.month - months
@@ -662,7 +838,7 @@ if 'form_category' not in st.session_state:
     st.session_state.form_category = "Expense"
 
 # CREATE TABS HERE
-tab1, tab2 = st.tabs(["📝 Add Transaction", "📊 Summary"])
+tab1, tab2, tab3 = st.tabs(["📝 Add Transaction", "📊 Summary", "🏠 Leave"])
 
 
 # -------------------------
@@ -679,8 +855,8 @@ with tab1:
     # Category selection with callback to update subcategories
     category = col2.selectbox(
         "Category", 
-        ["Expense", "Income", "Investment", "Other"],
-        index=["Expense", "Income", "Investment", "Other"].index(st.session_state.form_category),
+        ["Expense", "Income", "Investment", "Other", "Leave"],
+        index=["Expense", "Income", "Investment", "Other", "Leave"].index(st.session_state.form_category),
         key=f"category_select_{st.session_state.form_key}"
     )
 
@@ -692,8 +868,13 @@ with tab1:
     subcategory_options = SUBCATEGORIES.get(category, [])
     subcategory = st.selectbox("Subcategory", subcategory_options, key=f"subcategory_{st.session_state.form_key}")
 
-    description = st.text_input("Description", placeholder="Enter transaction description", key=f"description_{st.session_state.form_key}")
-    amount = st.number_input("Amount (₹)", min_value=0.0, format="%.2f", step=1.0, key=f"amount_{st.session_state.form_key}")
+    if category != "Leave":
+        description = st.text_input("Description", placeholder="Enter transaction description", key=f"description_{st.session_state.form_key}")
+        amount = st.number_input("Amount (₹)", min_value=0.0, format="%.2f", step=1.0, key=f"amount_{st.session_state.form_key}")
+    else:
+        description = ""
+        amount = 0.0
+
     
     # Add validation display
     if DEBUG_MODE:
@@ -706,48 +887,50 @@ with tab1:
     
     # Submit button outside form for immediate response
     if st.button("💾 Add Transaction", use_container_width=True):
-        # Enhanced validation
         errors = []
-        
-        if amount <= 0:
-            errors.append("Amount must be greater than 0")
-        
-        if not description.strip():
-            errors.append("Description cannot be empty")
-            
+
+        if category != "Leave":
+            if amount <= 0:
+                errors.append("Amount must be greater than 0")
+            if not description.strip():
+                errors.append("Description cannot be empty")
         if not subcategory:
             errors.append("Please select a subcategory")
-        
+
         if errors:
             for error in errors:
                 st.error(f"❌ {error}")
         else:
-            if DEBUG_MODE:
-                st.write("🔍 Debug: All validations passed, attempting to add transaction...")
-            
-            # Add transaction with error handling
+            # Handle duplicate leave logic
+            selected_date = pd.to_datetime(date).date()
+            if category == "Leave":
+                df["Date"] = pd.to_datetime(df["Date"], errors='coerce')
+
+                duplicate = df[
+                    (df["Category"] == "Leave") &
+                    (df["Subcategory"] == subcategory) &
+                    (df["Date"].dt.date == selected_date)
+                ]
+
+                if not duplicate.empty:
+                    st.error(f"❌ Leave already recorded for {subcategory} on {selected_date.strftime('%d %b %Y')}")
+                    st.stop()
+
+            # Add transaction
             success, message = add_transaction(date, category, subcategory, description.strip(), amount)
-            
+
             if success:
-                # Clear the data cache to refresh data
                 load_data_cached.clear()
-                
-                # Show success message and balloons BEFORE rerun
                 st.success("✅ Transaction successfully recorded!")
                 st.balloons()
-                
-                # Small delay to show the message
                 import time
                 time.sleep(2)
-                
-                # Reset form state
                 st.session_state.form_key += 1
-                st.session_state.form_category = "Expense"  # Reset to default
-                
-                # Auto-refresh the page after successful entry
+                st.session_state.form_category = "Expense"
                 st.rerun()
             else:
                 st.error("❌ " + message)
+
                 
                 # Additional troubleshooting info
                 st.info("💡 **Troubleshooting Tips:**\n"
@@ -762,7 +945,7 @@ with tab1:
         st.subheader("🕒 Last 5 Transactions")
         
         # Get last 5 rows from the dataframe (most recent entries by index)
-        recent_df = df.tail(5).iloc[::-1]  # Get last 5 and reverse order to show newest first
+        recent_df = df[df["Category"] != "Leave"].tail(5).iloc[::-1]  # Get last 5 and reverse order to show newest first
         
         for _, row in recent_df.iterrows():
             date_str = row["Date"].strftime("%d %b")
@@ -1197,6 +1380,134 @@ with tab2:
         st.markdown(grid_html, unsafe_allow_html=True)
         st.info("No transactions recorded yet. Add your first transaction in the 'Add Transaction' tab!")
 
+
+# -------------------------
+# TAB 3: Leave
+# -------------------------
+with tab3:
+    st.header("🏠 Leave Tracker")
+    
+    if not df.empty:
+        # Month and Year selection
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            available_years = sorted(df["Date"].dt.year.unique(), reverse=True)
+            default_year = datetime.now().year if datetime.now().year in available_years else available_years[0]
+            Leave_selected_year = st.selectbox("Year", available_years, 
+                                               index=available_years.index(default_year), 
+                                               key="Leave_year")
+        
+        with col2:
+            # Get months available for the selected year
+            year_data = df[df["Date"].dt.year == Leave_selected_year]
+            available_months = sorted(year_data["Date"].dt.month.unique())
+            
+            # Set default to current month if available
+            current_month = datetime.now().month
+            default_month = current_month if (current_month in available_months and 
+                                           Leave_selected_year == datetime.now().year) else available_months[0] if available_months else current_month
+            
+            month_options = [(month, calendar.month_name[month]) for month in range(1, 13)]
+            try:
+                default_index = [month for month, _ in month_options].index(default_month)
+            except ValueError:
+                default_index = current_month - 1
+                
+            selected_month_name = st.selectbox(
+                "Month", 
+                options=[name for _, name in month_options],
+                index=default_index,
+                key="Leave_month"
+            )
+            
+            # Get the month number
+            Leave_selected_month = next(month for month, name in month_options if name == selected_month_name)
+        
+        # Filter Leave data for selected month
+        Leave_data = df[(df["Date"].dt.year == Leave_selected_year) & 
+                        (df["Date"].dt.month == Leave_selected_month) & 
+                        (df["Category"] == "Leave")]
+        
+        # Monthly summary cards
+        maid_Leave = len(Leave_data[Leave_data["Subcategory"] == "Maid"])
+        cook_Leave = len(Leave_data[Leave_data["Subcategory"] == "Cook"])
+        
+        # Custom grid for Leave summary
+        Leave_grid_html = f"""
+            <div class="custom-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; width: 100%; margin: 1rem 0;">
+                <div class="custom-metric" style="background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 50%, #f48fb1 100%);
+                    border: 0px solid #e91e63; box-shadow: 0 2px 10px rgba(233, 30, 99, 0.15);">
+                    <div class="metric-label">👩‍🍳 Maid Leaves</div>
+                    <div class="metric-value">{maid_Leave} days</div>
+                </div>
+                <div class="custom-metric" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 50%, #90caf9 100%);
+                    border: 0px solid #2196f3; box-shadow: 0 2px 10px rgba(33, 150, 243, 0.15);">
+                    <div class="metric-label">👨‍🍳 Cook Leaves</div>
+                    <div class="metric-value">{cook_Leave} days</div>
+                </div>
+            </div>
+        """
+        st.markdown(Leave_grid_html, unsafe_allow_html=True)
+        
+        # Generate and display Leave calendar
+        Leave_calendar_html = create_Leave_calendar_view(df, Leave_selected_year, Leave_selected_month)
+        st.markdown(Leave_calendar_html, unsafe_allow_html=True)
+        
+        # Add legend
+        st.markdown("""
+        <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 1rem; flex-wrap: wrap;">
+            <span style="background: #fce4ec; color: #e91e63; padding: 0.2rem 0.5rem; border-radius: 8px; font-size: 0.8rem; border: 1px solid #f8bbd9;">👩‍🍳 Maid Leave</span>
+            <span style="background: #e3f2fd; color: #2196f3; padding: 0.2rem 0.5rem; border-radius: 8px; font-size: 0.8rem; border: 1px solid #bbdefb;">👨‍🍳 Cook Leave</span>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Show recent Leave
+        # if not Leave_data.empty:
+        #     st.markdown("---")
+        #     st.subheader("📋 This Month's Leave")
+            
+        #     for _, row in Leave_data.sort_values("Date", ascending=False).iterrows():
+        #         date_str = row["Date"].strftime("%d %b")
+        #         person = row["Subcategory"]
+        #         color = "#e91e63" if person == "Maid" else "#2196f3"
+        #         icon = "👩‍🍳" if person == "Maid" else "👨‍🍳"
+                
+        #         st.markdown(f"""
+        #         <div class="recent-entry">
+        #             <span class="entry-date">{date_str}</span> | 
+        #             <span class="entry-category" style="color: {color};">{icon} {person}</span>
+        #             <br><small>{row["Description"] if row["Description"] else "Leave"}</small>
+        #         </div>
+        #         """, unsafe_allow_html=True)
+        
+    else:
+        # Empty state
+        st.subheader(f"📅 {datetime.now().strftime('%B %Y')}")
+        
+        # Empty summary cards
+        Leave_grid_html = f"""
+        
+        <div class="custom-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; width: 100%; margin: 1rem 0;">
+            <div class="custom-metric" style="background: linear-gradient(135deg, #fce4ec 0%, #f8bbd9 50%, #f48fb1 100%); border: 0px solid #e91e63; box-shadow: 0 2px 10px rgba(233, 30, 99, 0.15);">
+                <div class="metric-label">👩‍🍳 Maid Leave</div>
+                <div class="metric-value">0 days</div>
+            </div>
+            <div class="custom-metric" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 50%, #90caf9 100%); border: 0px solid #2196f3; box-shadow: 0 2px 10px rgba(33, 150, 243, 0.15);">
+                <div class="metric-label">👨‍🍳 Cook Leave</div>
+                <div class="metric-value">0 days</div>
+            </div>
+        </div>
+        """
+        st.markdown(Leave_grid_html, unsafe_allow_html=True)
+        
+        st.info("No Leave recorded yet. Add leave entries in the 'Add Transaction' tab using 'Leave' category!")
+        
+        # Show empty calendar for current month
+        current_year = datetime.now().year
+        current_month = datetime.now().month
+        empty_calendar = create_Leave_calendar_view(pd.DataFrame(), current_year, current_month)
+        st.markdown(empty_calendar, unsafe_allow_html=True)
 
 # # -------------------------
 # # TAB 3: CALENDAR VIEW
