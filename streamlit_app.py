@@ -764,7 +764,7 @@ def add_transaction(date, category, subcategory, description, amount):
         date_str = date.strftime("%Y-%m-%d") if hasattr(date, 'strftime') else str(date)
         
         # Prepare the row data
-        new_row = [date_str, category, subcategory, description.strip().title(), float(amount)]
+        new_row = [date_str, category, subcategory, description.strip().title(), float(amount), paid_by]
         
         if DEBUG_MODE:
             st.write(f"🔍 Debug: Row data prepared: {new_row}")
@@ -854,7 +854,7 @@ if 'form_category' not in st.session_state:
     st.session_state.form_category = "Expense"
 
 # CREATE TABS HERE
-tab1, tab2, tab3 = st.tabs(["📝 Add Transaction", "📊 Summary", "🏠 Leave"])
+tab1, tab2, tab3 = st.tabs(["📝 Transactions", "📊 Summary", "🏠 Leave"])
 
 
 # -------------------------
@@ -886,7 +886,9 @@ with tab1:
 
     if category != "Leave":
         description = st.text_input("Description", placeholder="Enter transaction description", key=f"description_{st.session_state.form_key}")
-        amount = st.number_input("Amount (₹)", min_value=0.0, format="%.2f", step=1.0, key=f"amount_{st.session_state.form_key}")
+        amount = st.number_input("Amount (₹)", min_value=0.0, format="%.0f", step=1.0, key=f"amount_{st.session_state.form_key}")
+        paid_by = st.selectbox("Paid By", ["Shubham", "Yashika"], key=f"paidby_{st.session_state.form_key}")
+
     else:
         description = ""
         amount = 0.0
@@ -975,7 +977,7 @@ with tab1:
                 <span class="entry-date">{date_str}</span> | 
                 <span class="entry-category" style="color: {color};">{row["Category"]}</span> - {row["Subcategory"]}
                 <span class="entry-amount" style="color: {color};">₹{row["Amount (₹)"]:,.0f}</span>
-                <br><small>{row["Description"]}</small>
+                <br><small style="color: black;">{row["Description"]}</small>
             </div>
             """, unsafe_allow_html=True)
 
@@ -1055,6 +1057,8 @@ with tab2:
             # Calculate totals for selected period
             total_income = selected_period_df[selected_period_df["Category"] == "Income"]["Amount (₹)"].sum()
             total_expense = selected_period_df[selected_period_df["Category"] == "Expense"]["Amount (₹)"].sum()
+            total_expense_shubham = selected_period_df[(selected_period_df["Category"] == "Expense") & (selected_period_df["Paid by"] == "Shubham")]["Amount (₹)"].sum()
+            total_expense_yashika = selected_period_df[(selected_period_df["Category"] == "Expense") & (selected_period_df["Paid by"] == "Yashika")]["Amount (₹)"].sum()
             total_investment = selected_period_df[selected_period_df["Category"] == "Investment"]["Amount (₹)"].sum()
             total_investment_alltime = df[df["Category"] == "Investment"]["Amount (₹)"].sum()
             net_savings = total_income - total_expense - total_investment
@@ -1065,7 +1069,7 @@ with tab2:
             # Custom grid
             grid_html = f"""
             <div class="custom-grid">
-                {create_custom_metric_card("💸 Expense", f"₹{total_expense:,.0f}", "expense")}
+                {create_custom_metric_card("💸 Expense", f"₹{total_expense:,.0f}<br><small style='font-size: 0.7rem; color: #666;'>👨 ₹{total_expense_shubham:,.0f}  |  👩 ₹{total_expense_yashika:,.0f}</small>", "expense")}
                 {create_custom_metric_card("📈 Investment", f"₹{total_investment:,.0f}<br><small style='font-size: 0.7rem; color: #666;'>Total: ₹{total_investment_alltime:,.0f}</small>", "investment")}            
                 {create_custom_metric_card("💰 Income", f"₹{total_income:,.0f}", "income")}
                 
