@@ -1069,7 +1069,7 @@ with tab2:
             # Custom grid
             grid_html = f"""
             <div class="custom-grid">
-                {create_custom_metric_card("💸 Expense", f"₹{total_expense:,.0f}<br><small style='font-size: 0.7rem; color: #666;'>👨 ₹{total_expense_shubham:,.0f}  |  👩 ₹{total_expense_yashika:,.0f}</small>", "expense")}
+                {create_custom_metric_card("💸 Expense", f"₹{total_expense:,.0f}<br><small style='font-size: 0.7rem; color: #666;'>👨 {format_amount(total_expense_shubham)}  |  👩 {format_amount(total_expense_yashika)}</small>", "expense")}
                 {create_custom_metric_card("📈 Investment", f"₹{total_investment:,.0f}<br><small style='font-size: 0.7rem; color: #666;'>Total: ₹{total_investment_alltime:,.0f}</small>", "investment")}            
                 {create_custom_metric_card("💰 Income", f"₹{total_income:,.0f}", "income")}
                 
