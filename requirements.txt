@@ -1,0 +1,9 @@
+streamlit
+gspread==5.10.0
+pandas
+oauth2client==4.1.3
+plotly
+httplib2==0.20.4
+google-auth==2.17.3
+google-auth-httplib2==0.1.0
+openpyxl
