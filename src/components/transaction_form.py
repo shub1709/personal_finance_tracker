@@ -104,6 +104,7 @@ class TransactionForm:
             # Create transaction object
             transaction = Transaction(
                 date=datetime.combine(date, datetime.min.time()),
+                # date=datetime.now(),
                 category=category,
                 subcategory=subcategory,
                 description=description,

@@ -6,6 +6,7 @@ from datetime import datetime
 import calendar
 from src.utils.formatters import format_amount
 from src.utils.calendar_generator import CalendarGenerator
+from config.config import Config
 
 class SummaryDashboard:
     """Component for displaying summary dashboard with analytics"""
@@ -51,31 +52,36 @@ class SummaryDashboard:
             st.write("")  # Spacer
         
         return selected_year, selected_months
-    
+
     def create_category_chart(self, df: pd.DataFrame, category: str, theme_color: str) -> None:
-        """Create bar chart for a specific category"""
+        """Create bar chart for a specific category (grouped on x-axis)"""
         category_df = df[df["Category"] == category]
-        
+
         if category_df.empty:
             st.info(f"No {category.lower()} data for selected period")
             return
-        
-        # Bar Chart
-        category_by_subcat = category_df.groupby("Subcategory")["Amount (₹)"].sum().reset_index()
-        category_by_subcat = category_by_subcat.sort_values("Amount (₹)", ascending=False)
-        
-        # Add formatted labels for better readability
-        category_by_subcat['Amount_Label'] = category_by_subcat['Amount (₹)'].apply(format_amount)
-        
-        fig = px.bar(category_by_subcat, 
-                    x="Subcategory", 
-                    y="Amount (₹)",
-                    title=f"{category} Breakdown",
-                    text="Amount_Label")
-        
+
+        # ✅ Apply mapping for x-axis grouping
+        category_df["ChartGroup"] = category_df["Subcategory"].map(
+            Config.CATEGORY_GROUPING
+        ).fillna(category_df["Subcategory"])  # fallback to original if not mapped
+
+        # Group by the new axis label, but keep sum of amounts
+        category_by_group = category_df.groupby("ChartGroup")["Amount (₹)"].sum().reset_index()
+        category_by_group = category_by_group.sort_values("Amount (₹)", ascending=False)
+        category_by_group['Amount_Label'] = category_by_group['Amount (₹)'].apply(format_amount)
+
+        fig = px.bar(
+            category_by_group,
+            x="ChartGroup",
+            y="Amount (₹)",
+            title=f"{category} Breakdown",
+            text="Amount_Label"
+        )
+
         fig.update_layout(
-            height=400, 
-            xaxis_tickangle=-45, 
+            height=400,
+            xaxis_tickangle=-45,
             showlegend=False,
             font=dict(size=12),
             title_x=0.3,
@@ -83,11 +89,10 @@ class SummaryDashboard:
             yaxis_title=None
         )
         fig.update_traces(textposition='outside', marker_color=theme_color)
-        
-        # Adjust y-axis to accommodate labels
-        max_value = category_by_subcat['Amount (₹)'].max()
+
+        max_value = category_by_group['Amount (₹)'].max()
         fig.update_yaxes(range=[0, max_value * 1.2])
-        
+
         st.plotly_chart(fig, use_container_width=True, config={'staticPlot': True})
 
 
