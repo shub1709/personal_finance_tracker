@@ -4,6 +4,7 @@ from google.oauth2.service_account import Credentials
 from typing import Optional, List, Dict, Any
 import time
 from datetime import datetime
+import pytz
 from config.config import Config
 
 class GoogleSheetsService:
@@ -86,7 +87,8 @@ class GoogleSheetsService:
             return []
     
     def add_record(self, row_data: List[Any], max_retries: int = 3, 
-                   include_timestamp: bool = True, timestamp_format: str = "%Y-%m-%d %H:%M:%S") -> tuple[bool, str]:
+                   include_timestamp: bool = True, timestamp_format: str = "%Y-%m-%d %H:%M:%S",
+                   timezone: str = "Asia/Kolkata") -> tuple[bool, str]:
         """
         Add a new record to the worksheet with optional timestamp
         
@@ -95,6 +97,7 @@ class GoogleSheetsService:
             max_retries: Number of retry attempts for API calls
             include_timestamp: Whether to append timestamp to the row
             timestamp_format: Format for the timestamp (default: YYYY-MM-DD HH:MM:SS)
+            timezone: Timezone for the timestamp (default: Asia/Kolkata for IST)
         """
         try:
             ws = self.get_worksheet()
@@ -103,11 +106,14 @@ class GoogleSheetsService:
             
             # Add timestamp if requested
             if include_timestamp:
-                timestamp = datetime.now().strftime(timestamp_format)
+                # Get current time in specified timezone
+                tz = pytz.timezone(timezone)
+                ist_time = datetime.now(tz)
+                timestamp = ist_time.strftime(timestamp_format)
                 row_data_with_timestamp = row_data + [timestamp]
                 
                 if Config.get_debug_mode():
-                    st.write(f"🔍 Debug: Added timestamp: {timestamp}")
+                    st.write(f"🔍 Debug: Added IST timestamp: {timestamp}")
             else:
                 row_data_with_timestamp = row_data
             
@@ -151,6 +157,7 @@ class GoogleSheetsService:
     def add_record_with_custom_timestamp(self, row_data: List[Any], 
                                        custom_timestamp: Optional[datetime] = None,
                                        timestamp_format: str = "%Y-%m-%d %H:%M:%S",
+                                       timezone: str = "Asia/Kolkata",
                                        max_retries: int = 3) -> tuple[bool, str]:
         """
         Add a record with a custom timestamp (useful for backdating or specific times)
@@ -159,10 +166,17 @@ class GoogleSheetsService:
             row_data: List of values to add to the row
             custom_timestamp: Custom datetime object (if None, uses current time)
             timestamp_format: Format for the timestamp
+            timezone: Timezone for the timestamp (default: Asia/Kolkata for IST)
             max_retries: Number of retry attempts for API calls
         """
         if custom_timestamp is None:
-            custom_timestamp = datetime.now()
+            # Get current time in specified timezone
+            tz = pytz.timezone(timezone)
+            custom_timestamp = datetime.now(tz)
+        elif custom_timestamp.tzinfo is None:
+            # If datetime is naive, localize it to specified timezone
+            tz = pytz.timezone(timezone)
+            custom_timestamp = tz.localize(custom_timestamp)
         
         timestamp_str = custom_timestamp.strftime(timestamp_format)
         row_data_with_timestamp = row_data + [timestamp_str]
