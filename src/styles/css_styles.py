@@ -22,7 +22,7 @@ def get_main_css() -> str:
         text-align: center !important;
         margin-top: 0rem !important;
         margin-bottom: 0.8rem !important;
-        font-size: 1.6rem !important;
+        font-size: 1.2rem !important;
     }
 
     /* Custom grid layout for metrics */

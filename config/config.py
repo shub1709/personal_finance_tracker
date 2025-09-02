@@ -42,7 +42,31 @@ class Config:
         ],
         "Leave": ["Maid", "Cook"]
     }
-    
+
+
+    # High-level grouping for bar chart axis only
+    CATEGORY_GROUPING: Dict[str, str] = {
+        # Fun
+        "Food & Dining": "Fun",
+        "Entertainment": "Fun",
+        "Shopping": "Fun",
+        "Travel": "Fun",
+        "Personal Care": "Fun",
+
+        # Groceries
+        "Groceries": "Groceries",
+
+        # Miscellaneous
+        "Transportation": "Miscellaneous",
+        "Education": "Miscellaneous",
+
+        # Fixed
+        "Utilities": "Fixed",
+        "Rent/EMI": "Fixed",
+        "Healthcare": "Fixed",
+        "Insurance": "Fixed"
+    }
+
     # UI Configuration
     CATEGORY_COLORS = {
         "Income": "#28a745",
