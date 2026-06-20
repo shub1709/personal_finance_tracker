@@ -57,7 +57,7 @@ class Config:
         "Groceries": "Groceries",
 
         # Miscellaneous
-        "Transportation": "Miscellaneous",
+        "Transportation": "Fixed",
         "Education": "Miscellaneous",
 
         # Fixed
